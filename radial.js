@@ -34,14 +34,19 @@ function buildchart() {
       `
       <defs>
       <style type="text/css">${svgcss()}${svgcssradial}</style>
-        </defs>
-        `
+      <filter id="drop-shadow">
+      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.5">
+      </feDropShadow>
+      </filter>
+      </defs>
+      `
     )
     .append("g")
     .attr("transform", `translate(0, ${config.titleHeight})`);
 
   const graph = svg
     .append("g")
+    .attr("id", "radial")
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
 
   const link = graph.append("g").selectAll(".link"),
@@ -65,6 +70,76 @@ function buildchart() {
 }
 
 /*
+ * Interaction functions
+ */
+
+function handleMouseOver(d, i) {
+  const svg = d3.select("g#radial");
+  const cursor = d3.mouse(this);
+
+  // Ugly, will fix later
+  const label =
+    "longLabel" in d.data.data ? d.data.data.longLabel : d.data.data.label;
+  const value =
+    "eigenfactor" in d.data.data
+      ? d.data.data.eigenfactor
+      : d.data.data.parentEigenfactor;
+
+  d3.selectAll(".tooltip").remove();
+
+  const g = svg
+    .append("g")
+    .classed("tooltip", true)
+    .attr("id", "t-" + i);
+
+  const rect = g
+    .append("rect")
+    .classed("background", true)
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("filter", "url(#drop-shadow)");
+
+  const text = g
+    .append("text")
+    .classed("text", true)
+    .attr("x", 0)
+    .attr("y", 0);
+
+  const tspan1 = text
+    .append("tspan")
+    .classed("title", true)
+    .attr("x", 4)
+    .attr("dy", "1em")
+    .text(label);
+
+  text
+    .append("tspan")
+    .classed("detail", true)
+    .attr("x", 4)
+    .attr("dy", "1em")
+    .text("Eigenfactor: " + cutAfter(value, 6));
+
+  const bbox = text.node().getBBox();
+  rect.attr("width", bbox.width + 8).attr("height", bbox.height);
+
+  /* Manage the bottom and right edges */
+  const x =
+    cursor[0] -
+    (cursor[0] + bbox.width + 8 + 2 > width / 2 ? bbox.width + 8 : 0);
+  const y =
+    cursor[1] +
+    (d.data.y + cursor[1] + bbox.height + 26 + 2 > height - config.titleHeight
+      ? -bbox.height - 6
+      : 26);
+
+  g.attr("transform", `translate(${x},${y})`);
+}
+
+function handleMouseOut(d, i) {
+  d3.select("#t-" + i).remove();
+}
+
+/*
  * Graphical functions
  */
 
@@ -77,7 +152,9 @@ function drawInnerArcs(node, data, radius) {
     .append("path")
     .classed("innerArc", true)
     .attr("d", d => arc(d))
-    .attr("fill", d => d.color);
+    .attr("fill", d => d.color)
+    .on("mousemove", handleMouseOver)
+    .on("mouseout", handleMouseOut);
 }
 
 function drawOuterArcs(node, data, radius) {
@@ -90,6 +167,8 @@ function drawOuterArcs(node, data, radius) {
     .classed("outerArc", true)
     .attr("d", d => arc(d))
     .attr("fill", d => d.color)
+    .on("mousemove", handleMouseOver)
+    .on("mouseout", handleMouseOut)
     .on("click", d => console.log(d.data.data.label));
 }
 function drawLinks(link, leaves) {
