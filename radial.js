@@ -62,7 +62,6 @@ function buildchart() {
 
   drawOuterArcs(graph.append("g"), outerArcsData, radius);
   drawInnerArcs(graph.append("g"), innerArcsData, radius);
-  //drawCategories(node)
   drawLabels(node, outerArcsData, radius);
   drawLinks(link, leavesData);
 
@@ -168,8 +167,7 @@ function drawOuterArcs(node, data, radius) {
     .attr("d", d => arc(d))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut)
-    .on("click", d => console.log(d.data.data.label));
+    .on("mouseout", handleMouseOut);
 }
 function drawLinks(link, leaves) {
   return link
