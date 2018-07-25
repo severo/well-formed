@@ -1,0 +1,20 @@
+/*
+ * CSS for the HTML page
+ */
+
+body {
+  margin: 0;
+  padding: 0;
+}
+button#fullscreen {
+  position: absolute;
+  top: 4px;
+  right: 1em;
+  border: none;
+  text-transform: uppercase;
+  background: #dddddd;
+  color: #333;
+  font-size: 12px;
+  padding: 4px 5px;
+  font-family: "flamalightregular";
+}
