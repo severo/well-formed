@@ -1,8 +1,8 @@
 const svgcssradial = `
 .link {
-  stroke: #333;
-  stroke-opacity: 0.2;
-  stroke-width: 0.2;
+  /*stroke: #333;*/
+  /*stroke-opacity: 0.2;*/
+  /*stroke-width: 0.2;*/
   fill: none;
   pointer-events: none;
 }
@@ -195,7 +195,9 @@ function drawLinks(link, linksData, arcsLookup, radius) {
     .attr("d", d => {
       const l = line(radius)([center(d.source), center(d.target)]);
       return l;
-    });
+    })
+    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
+    .attr("stroke", d => getLinkColor(d));
 }
 
 function center(d) {
@@ -295,6 +297,24 @@ function getColor(leaf) {
   });
   if (leaf.depth === 2) color = fadeColor(color);
   return color;
+}
+
+function getLinkColor(link) {
+  let color = getColorByIndexAndWeight({
+    index:
+      link.source.data.depth === 3
+        ? +link.source.data.parent.parent.id
+        : +link.source.data.parent.id,
+    weight: link.normalizedWeight,
+    MIN_SAT: 0.4,
+    MAX_SAT: 0.95,
+    MIN_BRIGHTNESS: 0.8,
+    MAX_BRIGHTNESS: 0.5
+  });
+  let colorRGB = d3.rgb(color);
+  colorRGB.opacity = 0.3 + 0.6 * link.normalizedWeight;
+  /* TODO: add the same effect as Blend MULTIPLY (to darken the color) */
+  return colorRGB.toString();
 }
 
 function fadeColor(color) {
