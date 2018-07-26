@@ -19,17 +19,28 @@ config.titleHeight = 35;
  */
 function buildchart() {
   const radius = Math.min(width, height) / 2 - 40;
-  results.radialData = centerChildNodes(radial(data.tree, radius + 10));
+  const initialAngle = 0.5; /* TODO: find the real value, and why */
+
+  results.radialData = centerChildNodes(
+    stratifyTree(data.tree).sum(d => d.eigenfactor)
+  );
+  results.radialData = addAngleAndRadius(
+    results.radialData,
+    radius,
+    initialAngle,
+    results.radialData.value
+  );
+  results.radialData = results.radialData.each(addNodeColor);
+
   const leavesData = results.radialData.leaves();
   const groupsData = results.radialData
     .descendants()
     .filter(d => d.depth == 2)
     .map(d => ((d.yy = (3 / 2) * d.y), d));
-  const outerArcsData = createInnerArcsData(groupsData);
-  const innerArcsData = createInnerArcsData(results.radialData.leaves());
+
   const linksData = data.flowEdges;
-  const innerArcsLookup = innerArcsData.reduce((a, c) => {
-    a[c.data.data.id] = c;
+  const radialDataLookup = results.radialData.descendants().reduce((a, c) => {
+    a[c.data.id] = c;
     return a;
   }, {});
 
@@ -59,11 +70,10 @@ function buildchart() {
   const link = graph.append("g").selectAll(".link"),
     node = graph.append("g").selectAll(".node");
 
-  drawOuterArcs(graph.append("g"), outerArcsData, radius);
-  drawInnerArcs(graph.append("g"), innerArcsData, radius);
-  drawLabels(node, outerArcsData, radius);
-  drawLinks(link, linksData, innerArcsLookup, radius, 1000);
-  //drawLinksOLD(link, packageImports(leavesData));
+  drawOuterArcs(graph.append("g"), groupsData, radius);
+  drawInnerArcs(graph.append("g"), leavesData, radius);
+  drawLabels(node, groupsData, radius);
+  drawLinks(link, linksData, radialDataLookup, 1000);
 
   return svg.node();
 }
@@ -77,12 +87,9 @@ function handleMouseOver(d, i) {
   const cursor = d3.mouse(this);
 
   // Ugly, will fix later
-  const label =
-    "longLabel" in d.data.data ? d.data.data.longLabel : d.data.data.label;
+  const label = "longLabel" in d.data ? d.data.longLabel : d.data.label;
   const value =
-    "eigenfactor" in d.data.data
-      ? d.data.data.eigenfactor
-      : d.data.data.parentEigenfactor;
+    "eigenfactor" in d.data ? d.data.eigenfactor : d.data.parentEigenfactor;
 
   d3.selectAll(".tooltip").remove();
 
@@ -143,47 +150,32 @@ function handleMouseOut(d, i) {
  */
 
 function drawInnerArcs(node, data, radius) {
-  const arc = innerArc(radius);
   return node
     .selectAll(".innerArc")
     .data(data)
     .enter()
     .append("path")
     .classed("innerArc", true)
-    .attr("d", d => arc(d))
+    .attr("d", innerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
     .on("mouseout", handleMouseOut);
 }
 
 function drawOuterArcs(node, data, radius) {
-  const arc = outerArc(radius);
   return node
     .selectAll(".outerArc")
     .data(data)
     .enter()
     .append("path")
     .classed("outerArc", true)
-    .attr("d", d => arc(d))
+    .attr("d", outerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
     .on("mouseout", handleMouseOut);
 }
-function drawLinksOLD(link, linksData) {
-  return link
-    .data(linksData)
-    .enter()
-    .append("path")
-    .each(function(d) {
-      (d.source = d[0]), (d.target = d[d.length - 1]);
-    })
-    .attr("class", "link")
-    .attr("d", d => {
-      const l = line(d);
-      return l;
-    });
-}
-function drawLinks(link, linksData, arcsLookup, radius, maxLinks) {
+
+function drawLinks(link, linksData, radialDataLookup, maxLinks) {
   return link
     .data(
       linksData
@@ -193,32 +185,25 @@ function drawLinks(link, linksData, arcsLookup, radius, maxLinks) {
     .enter()
     .append("path")
     .each(function(d) {
-      (d.source = arcsLookup[d.source]), (d.target = arcsLookup[d.target]);
+      (d.source = radialDataLookup[d.source]),
+        (d.target = radialDataLookup[d.target]);
     })
     .attr("class", "link")
     .attr("d", d => {
-      const l = line([
-        [radius, center(d.source)],
-        [0, 0],
-        [radius, center(d.target)]
-      ]);
+      const l = line(d.source.path(d.target));
       return l;
     })
     .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
     .attr("stroke", d => getGreyLinkColor(d));
 }
 
-function center(d) {
-  return ((d.endAngle + d.startAngle) / 2) % (2 * Math.PI);
-}
-
-function drawLabels(node, leaves, radius) {
+function drawLabels(g, nodes, radius) {
   // show label if large enough, and there is in fact one
-  leaves = leaves
+  nodes = nodes
     .filter(
       node =>
-        node.data.data.parentEigenfactor > 0.005 &&
-        node.data.data.label !== "NO SUGGESTION"
+        node.data.parentEigenfactor > 0.005 &&
+        node.data.label !== "NO SUGGESTION"
     )
     .map(
       d => (
@@ -226,8 +211,8 @@ function drawLabels(node, leaves, radius) {
         d
       )
     );
-  return node
-    .data(leaves)
+  return g
+    .data(nodes)
     .enter()
     .append("text")
     .attr("class", "node")
@@ -237,7 +222,7 @@ function drawLabels(node, leaves, radius) {
         "rotate(" +
         (d.angle - 90) +
         ")translate(" +
-        (d.data.yy + 8) +
+        (radius + 20) +
         ",0)" +
         (d.angle < 180 ? "" : "rotate(180)")
       );
@@ -246,7 +231,7 @@ function drawLabels(node, leaves, radius) {
       return d.angle < 180 ? "start" : "end";
     })
     .text(function(d) {
-      return d.data.data.label;
+      return d.data.label;
     });
 }
 
@@ -260,14 +245,17 @@ function innerArc(radius) {
 }
 
 function outerArc(radius) {
-  return innerArc(radius + 11);
+  return d3
+    .arc()
+    .outerRadius(radius + 11)
+    .innerRadius(radius + 1);
 }
 
 const line = d3
   .radialLine()
   .curve(d3.curveBundle.beta(0.85))
-  .radius(d => d[0])
-  .angle(d => d[1]);
+  .radius(d => d.radius)
+  .angle(d => d.centerAngle);
 
 /*
  * DATA
@@ -276,33 +264,45 @@ const line = d3
  * https://bl.ocks.org/mbostock/7607999
  *
  */
-function createInnerArcsData(leavesData) {
-  return calcInnerArcsAngles(
-    leavesData.map((l, i) => {
-      return {
-        data: l,
-        value: l.value,
-        padAngle: 0,
-        index: i,
-        startAngle: 0,
-        endAngle: 0,
-        color: getColor(l)
-      };
-    })
-  );
+function addAngleAndRadius(node, radius, startAngle, maxValue) {
+  /* Add angles and radius to current node */
+  node.startAngle = startAngle;
+  node.endAngle = startAngle + (node.value / maxValue) * 2 * Math.PI;
+  node.padAngle =
+    node.endAngle - node.startAngle > 0.006
+      ? 0.0015
+      : (node.endAngle - node.startAngle) / 2;
+  node.centerAngle = (node.endAngle + node.startAngle) / 2;
+  node.radius = (radius * node.depth) / (node.depth + node.height);
+
+  /* Descend in the tree */
+  if ("children" in node) {
+    node.children = node.children.map((n, i) =>
+      addAngleAndRadius(
+        n,
+        radius,
+        i === 0 ? startAngle : node.children[i - 1].endAngle,
+        maxValue
+      )
+    );
+  }
+
+  return node;
 }
 
-function getColor(leaf) {
-  let color = getColorByIndexAndWeight({
-    index: leaf.depth === 3 ? +leaf.parent.parent.id : +leaf.parent.id,
-    weight: leaf.depth === 3 ? leaf.data.weight : leaf.value,
+function addNodeColor(node) {
+  if (node.depth === 0) return node;
+  node.color = getColorByIndexAndWeight({
+    index: node.depth === 3 ? +node.parent.parent.id : +node.parent.id,
+    weight: node.depth === 3 ? node.data.weight : node.value,
     MIN_SAT: 0.4,
     MAX_SAT: 0.95,
     MIN_BRIGHTNESS: 0.8,
     MAX_BRIGHTNESS: 0.5
   });
-  if (leaf.depth === 2) color = fadeColor(color);
-  return color;
+  if (node.depth === 2) node.color = fadeColor(node.color);
+
+  return node;
 }
 
 function getGreyLinkColor(link) {
@@ -316,55 +316,10 @@ function fadeColor(color) {
   return d3.hsv(hsvColor.h, 0.2, 0.8);
 }
 
-function calcInnerArcsAngles(arcs) {
-  const calcArcs = arcs.reduce(
-    (a, c) => {
-      c.startAngle = a.sumValues + a.shiftValue;
-      a.sumValues += c.value;
-      c.endAngle = a.sumValues + a.shiftValue;
-      a.arcs.push(c);
-      return a;
-    },
-    {
-      arcs: [],
-      sumValues: 0,
-      shiftValue: 0.03 // Fix this - I'm missing something
-    }
-  );
-  return calcArcs.arcs.map(c => {
-    c.startAngle = (2 * Math.PI * c.startAngle) / calcArcs.sumValues;
-    c.endAngle = (2 * Math.PI * c.endAngle) / calcArcs.sumValues;
-    c.padAngle =
-      c.endAngle - c.startAngle > 0.006
-        ? 0.0015
-        : (c.endAngle - c.startAngle) / 2;
-    return c;
-  });
-}
-
-function hierarchy(tree) {
-  return d3
-    .stratify()
-    .id(function(d) {
-      return d.path;
-    })
-    .parentId(function(d) {
-      return d.parentPath;
-    })(tree);
-}
-
-function radial(data, innerRadius) {
-  /*const diameter = 960,
-    radius = diameter / 2,
-    innerRadius = radius - 120;*/
-
-  const cluster = d3.cluster().size([360, innerRadius]),
-    hier = hierarchy(data).sum(d => d.eigenfactor);
-  //.sort((a, b) => b.value - a.value);
-  cluster(hier);
-
-  return hier;
-}
+const stratifyTree = d3
+  .stratify()
+  .id(d => d.path)
+  .parentId(d => d.parentPath);
 
 // Return a list of imports for the given array of nodes.
 function packageImports(nodes) {
