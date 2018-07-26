@@ -20,11 +20,18 @@ config.titleHeight = 35;
 function buildchart() {
   const radius = Math.min(width, height) / 2 - 40;
   results.radialData = centerChildNodes(radial(data.tree, radius + 10));
-  results.innerData = centerChildNodes(hierarchy(data.tree));
-  results.leavesLookup = new Map();
-  results.radialData
-    .leaves()
-    .forEach(d => (results.leavesLookup[d.data.id] = d));
+  const leavesData = results.radialData.leaves();
+  const groupsData = results.radialData
+    .descendants()
+    .filter(d => d.depth == 2)
+    .map(d => ((d.yy = (3 / 2) * d.y), d));
+  const outerArcsData = createInnerArcsData(groupsData);
+  const innerArcsData = createInnerArcsData(results.radialData.leaves());
+  const linksData = data.flowEdges;
+  const innerArcsLookup = innerArcsData.reduce((a, c) => {
+    a[c.data.data.id] = c;
+    return a;
+  }, {});
 
   const svg = d3
     .select("svg")
@@ -52,18 +59,11 @@ function buildchart() {
   const link = graph.append("g").selectAll(".link"),
     node = graph.append("g").selectAll(".node");
 
-  const leavesData = results.radialData.leaves();
-  const groupsData = results.radialData
-    .descendants()
-    .filter(d => d.depth == 2)
-    .map(d => ((d.yy = (3 / 2) * d.y), d));
-  const outerArcsData = createInnerArcsData(groupsData);
-  const innerArcsData = createInnerArcsData(results.radialData.leaves());
-
   drawOuterArcs(graph.append("g"), outerArcsData, radius);
   drawInnerArcs(graph.append("g"), innerArcsData, radius);
   drawLabels(node, outerArcsData, radius);
-  drawLinks(link, leavesData);
+  drawLinks(link, linksData, innerArcsLookup, radius);
+  //drawLinksOLD(link, packageImports(leavesData));
 
   return svg.node();
 }
@@ -169,20 +169,40 @@ function drawOuterArcs(node, data, radius) {
     .on("mousemove", handleMouseOver)
     .on("mouseout", handleMouseOut);
 }
-function drawLinks(link, leaves) {
+function drawLinksOLD(link, linksData) {
   return link
-    .data(packageImports(leaves)) // todo: links
+    .data(linksData)
     .enter()
     .append("path")
     .each(function(d) {
       (d.source = d[0]), (d.target = d[d.length - 1]);
     })
     .attr("class", "link")
-    .attr("d", line);
+    .attr("d", d => {
+      const l = line(d);
+      return l;
+    });
+}
+function drawLinks(link, linksData, arcsLookup, radius) {
+  return link
+    .data(linksData)
+    .enter()
+    .append("path")
+    .each(function(d) {
+      (d.source = arcsLookup[d.source]), (d.target = arcsLookup[d.target]);
+    })
+    .attr("class", "link")
+    .attr("d", d => {
+      const l = line(radius)([center(d.source), center(d.target)]);
+      return l;
+    });
+}
+
+function center(d) {
+  return ((d.endAngle + d.startAngle) / 2) % (2 * Math.PI);
 }
 
 function drawLabels(node, leaves, radius) {
-  console.log(leaves);
   // show label if large enough, and there is in fact one
   leaves = leaves
     .filter(
@@ -220,7 +240,7 @@ function drawLabels(node, leaves, radius) {
     });
 }
 
-/* Graphical functions for small elements */
+/* Graphical functions for basic elements */
 
 function innerArc(radius) {
   return d3
@@ -233,15 +253,13 @@ function outerArc(radius) {
   return innerArc(radius + 11);
 }
 
-const line = d3
-  .radialLine()
-  .curve(d3.curveBundle.beta(0.85))
-  .radius(function(d) {
-    return d.y;
-  })
-  .angle(function(d) {
-    return (d.x / 180) * Math.PI;
-  });
+function line(radius) {
+  return d3
+    .radialLine()
+    .curve(d3.curveBundle.beta(0.85))
+    .radius(radius)
+    .angle(d => d);
+}
 
 /*
  * DATA
