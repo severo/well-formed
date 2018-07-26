@@ -197,7 +197,11 @@ function drawLinks(link, linksData, arcsLookup, radius, maxLinks) {
     })
     .attr("class", "link")
     .attr("d", d => {
-      const l = line(radius)([center(d.source), center(d.target)]);
+      const l = line([
+        [radius, center(d.source)],
+        [0, 0],
+        [radius, center(d.target)]
+      ]);
       return l;
     })
     .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
@@ -259,13 +263,11 @@ function outerArc(radius) {
   return innerArc(radius + 11);
 }
 
-function line(radius) {
-  return d3
-    .radialLine()
-    .curve(d3.curveBundle.beta(0.85))
-    .radius(radius)
-    .angle(d => d);
-}
+const line = d3
+  .radialLine()
+  .curve(d3.curveBundle.beta(0.85))
+  .radius(d => d[0])
+  .angle(d => d[1]);
 
 /*
  * DATA
