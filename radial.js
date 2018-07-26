@@ -204,8 +204,8 @@ function drawLinks(link, linksData, arcsLookup, radius, maxLinks) {
       ]);
       return l;
     })
-    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
-    .attr("stroke", d => getLinkColor(d));
+    .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
+    .attr("stroke", d => getGreyLinkColor(d));
 }
 
 function center(d) {
@@ -305,22 +305,10 @@ function getColor(leaf) {
   return color;
 }
 
-function getLinkColor(link) {
-  let color = getColorByIndexAndWeight({
-    index:
-      link.source.data.depth === 3
-        ? +link.source.data.parent.parent.id
-        : +link.source.data.parent.id,
-    weight: link.normalizedWeight,
-    MIN_SAT: 0.4,
-    MAX_SAT: 0.95,
-    MIN_BRIGHTNESS: 0.8,
-    MAX_BRIGHTNESS: 0.5
-  });
-  let colorRGB = d3.rgb(color);
-  colorRGB.opacity = 0.3 + 0.6 * link.normalizedWeight;
-  /* TODO: add the same effect as Blend MULTIPLY (to darken the color) */
-  return colorRGB.toString();
+function getGreyLinkColor(link) {
+  const brightness = 56 - Math.floor(56 * Math.sqrt(link.normalizedWeight));
+  const alpha = Math.sqrt(link.normalizedWeight) * 0.3 + 0.02;
+  return d3.rgb(brightness, brightness, brightness, alpha).toString();
 }
 
 function fadeColor(color) {
