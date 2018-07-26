@@ -62,7 +62,7 @@ function buildchart() {
   drawOuterArcs(graph.append("g"), outerArcsData, radius);
   drawInnerArcs(graph.append("g"), innerArcsData, radius);
   drawLabels(node, outerArcsData, radius);
-  drawLinks(link, linksData, innerArcsLookup, radius);
+  drawLinks(link, linksData, innerArcsLookup, radius, 1000);
   //drawLinksOLD(link, packageImports(leavesData));
 
   return svg.node();
@@ -183,9 +183,13 @@ function drawLinksOLD(link, linksData) {
       return l;
     });
 }
-function drawLinks(link, linksData, arcsLookup, radius) {
+function drawLinks(link, linksData, arcsLookup, radius, maxLinks) {
   return link
-    .data(linksData)
+    .data(
+      linksData
+        .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
+        .slice(0, maxLinks === undefined ? linksData.length : maxLinks)
+    )
     .enter()
     .append("path")
     .each(function(d) {
