@@ -31,7 +31,6 @@ function buildchart() {
     .select("svg")
     .attr("width", width)
     .attr("height", height + config.titleHeight)
-    .attr("background", "white")
     .html(
       `
       <style type="text/css">${svgcss()}${svgcssmap}</style>
@@ -45,6 +44,13 @@ function buildchart() {
     )
     .append("g")
     .attr("transform", `translate(0, ${config.titleHeight})`);
+
+  svg
+    .append("rect")
+    .attr("y", -config.titleHeight)
+    .attr("width", width)
+    .attr("height", height + config.titleHeight)
+    .attr("fill", "#f0f0f0");
 
   svg.append("circle").attr("id", "lens");
 
@@ -318,7 +324,7 @@ function add_interaction(chart) {
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
-    .attr("transform", `translate(${[9, config.titleHeight - 5]})`);
+    .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
 
   return chart;
 }
