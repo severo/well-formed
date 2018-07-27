@@ -43,9 +43,12 @@ function buildchart() {
     return a;
   }, {});
   const linksData = data.flowEdges.map(link => {
-    link.source = radialDataLookup[link.source];
-    link.target = radialDataLookup[link.target];
-    return link;
+    return {
+      source: radialDataLookup[link.source],
+      target: radialDataLookup[link.target],
+      weight: link.weight,
+      normalizedWeight: link.normalizedWeight
+    };
   });
 
   const svg = d3
