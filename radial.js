@@ -10,6 +10,8 @@ path.innerArc:hover { fill: #444444; }
 path.outerArc:hover { fill: #444444; }
 
 text.node { fill: #888888; font-family: flamalightregular; font-size: 13px; }
+
+path.innerArc.clicked { fill: #222222 }
 `;
 
 config.titleHeight = 35;
@@ -75,7 +77,7 @@ function buildchart() {
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
 
   const link = graph.append("g").selectAll(".link"),
-    node = graph.append("g").selectAll(".node");
+    node = graph.append("g").selectAll(".arc");
 
   const title = svg
     .append("g")
@@ -211,6 +213,8 @@ function handleClick(arc, i) {
 function goToNormalState() {
   clicked = -1;
   setTitle("");
+  const innerArcs = d3.selectAll("svg .innerArc");
+  innerArcs.classed("clicked", false);
 }
 
 function goToSelectedState(arc) {
@@ -220,6 +224,11 @@ function goToSelectedState(arc) {
 
 function selectArc(arc) {
   setTitle(arc.data.longLabel);
+
+  /* Later: use the same function to select a category */
+  const innerArcs = d3.selectAll("svg .innerArc");
+  innerArcs.classed("clicked", d => d.data.id === arc.data.id);
+  return;
 }
 
 function setTitle(title) {
@@ -240,6 +249,7 @@ function drawInnerArcs(node, data, radius) {
     .enter()
     .append("path")
     .classed("innerArc", true)
+    .attr("id", d => d.data.id)
     .attr("d", innerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
@@ -254,6 +264,7 @@ function drawOuterArcs(node, data, radius) {
     .enter()
     .append("path")
     .classed("outerArc", true)
+    .attr("id", d => d.data.id)
     .attr("d", outerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
