@@ -318,7 +318,7 @@ function add_interaction(chart) {
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
-    .attr("transform", `translate(${[9, config.titleHeight - 5]})`);
+    .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
 
   return chart;
 }

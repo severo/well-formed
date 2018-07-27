@@ -40,7 +40,7 @@ function svgcss() {
     text { font-family: flamamediumregular, sans-serif; }
 
     .maintitle rect { fill: white; }
-    .maintitle text { fill: #222222; font-size: 26px; }
+    .maintitle text { fill: #343434; font-size: 24px; font-family: flamalightregular; }
 
     g.tooltip {}
     g.tooltip rect.background {fill: #000000; stroke: #333333; fill-opacity: 0.8}
