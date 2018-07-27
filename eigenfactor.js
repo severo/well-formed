@@ -21,6 +21,16 @@ function svgcss() {
   return `
     svg {background: #f0f0f0; }
 
+svg text, button {
+    -webkit-user-select: none;
+       -moz-user-select: none;
+        -ms-user-select: none;
+            user-select: none;
+}
+svg text::selection {
+    background: none;
+}
+
     @font-face {
         font-family: 'flamamediumregular';
         src: url('assets/flamamediumregular.woff2') format('woff2'),
