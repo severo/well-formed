@@ -19,7 +19,7 @@ config.titleHeight = 35;
  */
 function buildchart() {
   const radius = Math.min(width, height) / 2 - 40;
-  const initialAngle = 0.5; /* TODO: find the real value, and why */
+  const initialAngle = Math.PI / 5; /* TODO: understand why */
 
   results.radialData = centerChildNodes(
     stratifyTree(data.tree).sum(d => d.eigenfactor)
