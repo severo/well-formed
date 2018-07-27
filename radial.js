@@ -38,11 +38,15 @@ function buildchart() {
     .filter(d => d.depth == 2)
     .map(d => ((d.yy = (3 / 2) * d.y), d));
 
-  const linksData = data.flowEdges;
   const radialDataLookup = results.radialData.descendants().reduce((a, c) => {
     a[c.data.id] = c;
     return a;
   }, {});
+  const linksData = data.flowEdges.map(link => {
+    link.source = radialDataLookup[link.source];
+    link.target = radialDataLookup[link.target];
+    return link;
+  });
 
   const svg = d3
     .select("svg")
@@ -73,7 +77,7 @@ function buildchart() {
   drawOuterArcs(graph.append("g"), groupsData, radius);
   drawInnerArcs(graph.append("g"), leavesData, radius);
   drawLabels(node, groupsData, radius);
-  drawLinks(link, linksData, radialDataLookup, 1000);
+  drawLinks(link, linksData, 1000);
 
   return svg.node();
 }
@@ -175,7 +179,7 @@ function drawOuterArcs(node, data, radius) {
     .on("mouseout", handleMouseOut);
 }
 
-function drawLinks(link, linksData, radialDataLookup, maxLinks) {
+function drawLinks(link, linksData, maxLinks) {
   return link
     .data(
       linksData
@@ -184,17 +188,29 @@ function drawLinks(link, linksData, radialDataLookup, maxLinks) {
     )
     .enter()
     .append("path")
-    .each(function(d) {
-      (d.source = radialDataLookup[d.source]),
-        (d.target = radialDataLookup[d.target]);
-    })
     .attr("class", "link")
-    .attr("d", d => {
-      const l = line(d.source.path(d.target));
-      return l;
+    .attr("d", link => {
+      const path = moveEdgePoints(link.source.path(link.target));
+      return line(path);
     })
     .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
     .attr("stroke", d => getGreyLinkColor(d));
+}
+
+function moveEdgePoints(path) {
+  const source = path[0];
+  const target = path[path.length - 1];
+  let delta = ((source.centerAngle - target.centerAngle) / (2 * Math.PI)) % 1;
+  if (delta < 0) delta += 1;
+  path[0] = {
+    radius: source.radius,
+    centerAngle: source.centerAngle + source.angleWidth * (delta - 0.5)
+  };
+  path[path.length - 1] = {
+    radius: target.radius,
+    centerAngle: target.centerAngle + target.angleWidth * (0.5 - delta)
+  };
+  return path;
 }
 
 function drawLabels(g, nodes, radius) {
@@ -268,10 +284,8 @@ function addAngleAndRadius(node, radius, startAngle, maxValue) {
   /* Add angles and radius to current node */
   node.startAngle = startAngle;
   node.endAngle = startAngle + (node.value / maxValue) * 2 * Math.PI;
-  node.padAngle =
-    node.endAngle - node.startAngle > 0.006
-      ? 0.0015
-      : (node.endAngle - node.startAngle) / 2;
+  node.angleWidth = ((node.endAngle - node.startAngle) / 2) % (2 * Math.PI);
+  node.padAngle = node.angleWidth > 0.003 ? 0.0015 : node.angleWidth;
   node.centerAngle = (node.endAngle + node.startAngle) / 2;
   node.radius = (radius * node.depth) / (node.depth + node.height);
 
