@@ -20,7 +20,7 @@ config.titleHeight = 35;
  * Build the chart
  */
 function buildchart() {
-  const radius = Math.min(width, height) / 2 - 40;
+  results.radius = Math.min(width, height) / 2 - 40;
   const initialAngle = Math.PI / 5; /* TODO: understand why */
 
   results.radialData = centerChildNodes(
@@ -28,26 +28,26 @@ function buildchart() {
   );
   results.radialData = addAngleAndRadius(
     results.radialData,
-    radius - 10,
+    results.radius - 10,
     initialAngle,
     results.radialData.value
   );
   results.radialData = results.radialData.each(addNodeColor);
 
-  const leavesData = results.radialData.leaves();
-  const groupsData = results.radialData
+  results.leavesData = results.radialData.leaves();
+  results.groupsData = results.radialData
     .descendants()
     .filter(d => d.depth == 2)
     .map(d => ((d.yy = (3 / 2) * d.y), d));
 
-  const radialDataLookup = results.radialData.descendants().reduce((a, c) => {
+  results.radialDataLookup = results.radialData.descendants().reduce((a, c) => {
     a[c.data.id] = c;
     return a;
   }, {});
-  const linksData = data.flowEdges.map(link => {
+  results.linksData = data.flowEdges.map(link => {
     return {
-      source: radialDataLookup[link.source],
-      target: radialDataLookup[link.target],
+      source: results.radialDataLookup[link.source],
+      target: results.radialDataLookup[link.target],
       weight: link.weight,
       normalizedWeight: link.normalizedWeight
     };
@@ -85,15 +85,7 @@ function buildchart() {
     .append("text")
     .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
 
-  drawOuterArcs(graph.append("g").attr("id", "outerArcs"), groupsData, radius);
-  drawInnerArcs(graph.append("g").attr("id", "innerArcs"), leavesData, radius);
-  drawLabels(graph.append("g").attr("id", "labels"), groupsData, radius);
-  drawLinks(
-    graph.append("g").attr("id", "links"),
-    linksData,
-    1000,
-    getGrayLinkColor
-  );
+  goToNormalState();
 
   return svg.node();
 }
@@ -215,8 +207,34 @@ function handleClick(arc, i) {
 function goToNormalState() {
   clicked = -1;
   setTitle("");
-  const innerArcs = d3.selectAll("svg .innerArc");
-  innerArcs.classed("clicked", false);
+
+  const g = d3.select("g#radial");
+  g.select("g#innerArcs").remove();
+  g.select("g#outerArcs").remove();
+  g.select("g#label").remove();
+  g.select("g#links").remove();
+
+  drawOuterArcs(
+    g.append("g").attr("id", "outerArcs"),
+    results.groupsData,
+    results.radius
+  );
+  drawInnerArcs(
+    g.append("g").attr("id", "innerArcs"),
+    results.leavesData,
+    results.radius
+  );
+  drawLabels(
+    g.append("g").attr("id", "labels"),
+    results.groupsData,
+    results.radius
+  );
+  drawLinks(
+    g.append("g").attr("id", "links"),
+    results.linksData,
+    1000,
+    getGrayLinkColor
+  );
 }
 
 function goToSelectedState(arc) {
@@ -263,6 +281,37 @@ function selectArc(arc) {
       MAX_BRIGHTNESS: 0.5
     }); /* TODO: fix the color - it's slightly clearer on the original */
   });
+
+  /* Links */
+  const links = d3.select("g#links").remove();
+  drawLinks(
+    d3
+      .select("g#radial")
+      .append("g")
+      .attr("id", "links"),
+    results.linksData.filter(
+      l => l.source.data.id === arc.data.id || l.target.data.id === arc.data.id
+    ),
+    1000,
+    link => {
+      const color = d3.rgb(
+        getColorByIndexAndWeight({
+          index:
+            link.source.depth === 3
+              ? +link.source.parent.parent.id
+              : +link.source.parent.id,
+          weight: link.normalizedWeight,
+          MIN_SAT: 0.4,
+          MAX_SAT: 0.95,
+          MIN_BRIGHTNESS: 0.8,
+          MAX_BRIGHTNESS: 0.5
+        })
+      );
+      color.opacity = 0.3 + 0.6 * link.normalizedWeight;
+      /* TODO: reproduce the Flare MULTIPLY blend mode to darken */
+      return color.darker();
+    }
+  );
 }
 
 function setTitle(title) {
@@ -320,7 +369,7 @@ function drawLinks(g, linksData, maxLinks, colorFn) {
       const path = moveEdgePoints(link.source.path(link.target));
       return line(path);
     })
-    .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
+    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight) /* TODO: add /2 ?*/
     .attr("stroke", d => colorFn(d));
 }
 
