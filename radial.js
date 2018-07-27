@@ -230,15 +230,38 @@ function selectArc(arc) {
   const innerArcs = d3.selectAll("svg .innerArc");
   innerArcs.classed("clicked", d => d.data.id === arc.data.id);
 
-  const links = data.flowEdges.filter(
-    link => link.source === arc.data.id || link.target === arc.data.id
+  const sourceArcs = new Map(
+    data.flowEdges
+      .filter(link => link.target === arc.data.id)
+      .map(l => [l.source, l])
   );
-  const sourceArcs = new Set(links.map(l => l.source));
-  const targetArcs = new Set(links.map(l => l.target));
+  const targetArcs = new Map(
+    data.flowEdges
+      .filter(link => link.source === arc.data.id)
+      .map(l => [l.target, l])
+  );
+  const localWeights = new Map();
+  sourceArcs.forEach((l, a) => localWeights.set(a, l.normalizedWeight));
+  targetArcs.forEach((l, a) =>
+    localWeights.set(
+      a,
+      localWeights.has(a) ? localWeights.get(a) : 0 + l.normalizedWeight
+    )
+  );
   innerArcs.classed(
     "unlinked",
-    d => !sourceArcs.has(d.data.id) && !targetArcs.has(d.data.id)
+    d => !localWeights.has(d.data.id) && d.data.id !== arc.data.id
   );
+  innerArcs.filter(d => localWeights.has(d.data.id)).attr("fill", d => {
+    return getColorByIndexAndWeight({
+      index: d.depth === 3 ? +d.parent.parent.id : +d.parent.id,
+      weight: localWeights.get(d.data.id),
+      MIN_SAT: 0.4,
+      MAX_SAT: 0.95,
+      MIN_BRIGHTNESS: 0.8,
+      MAX_BRIGHTNESS: 0.5
+    }); /* TODO: fix the color - it's slightly clearer on the original */
+  });
 }
 
 function setTitle(title) {
