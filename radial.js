@@ -212,7 +212,7 @@ function goToNormalState() {
   const g = d3.select("g#radial");
   g.select("g#innerArcs").remove();
   g.select("g#outerArcs").remove();
-  g.select("g#label").remove();
+  g.select("g#labels").remove();
   g.select("g#links").remove();
 
   drawOuterArcs(
