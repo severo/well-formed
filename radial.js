@@ -335,29 +335,6 @@ const stratifyTree = d3
   .id(d => d.path)
   .parentId(d => d.parentPath);
 
-// Return a list of imports for the given array of nodes.
-function packageImports(nodes) {
-  var map = {},
-    imports = [];
-
-  // Compute a map from name to node.
-  nodes.forEach(function(d) {
-    map[d.data.path] = d;
-  });
-
-  // For each import, construct a link from the source to target node.
-  nodes.forEach(function(d) {
-    if (d.data.path)
-      nodes
-        .slice(0, 2) // todo: select the right nodes :-)
-        .map(d => d.data.path)
-        .forEach(function(i) {
-          imports.push(map[d.data.path].path(map[i]));
-        });
-  });
-  return imports;
-}
-
 function centerChildNodes(nodes) {
   nodes.each(node => {
     if ("children" in node) {
