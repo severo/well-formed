@@ -227,7 +227,11 @@ function goToNormalState() {
   );
   drawLabels(
     g.append("g").attr("id", "labels"),
-    results.groupsData,
+    results.groupsData.filter(
+      group =>
+        group.data.parentEigenfactor > 0.005 &&
+        group.data.label !== "NO SUGGESTION"
+    ),
     results.radius
   );
   drawLinks(
@@ -235,7 +239,7 @@ function goToNormalState() {
     results.linksData,
     1000,
     getGrayLinkColor
-  );
+  ); /* TODO: let the tooltip on top of the rest of SVG elements */
 }
 
 function goToSelectedState(arc) {
@@ -318,6 +322,19 @@ function selectArc(arc) {
   d3.select("g#outerArcs")
     .selectAll(".outerArc")
     .classed("unlinked", true);
+
+  /* Labels */
+  d3.select("g#labels").remove();
+  drawLabels(
+    d3
+      .select("g#radial")
+      .append("g")
+      .attr("id", "labels"),
+    results.leavesData.filter(d => {
+      return localWeights.has(d.data.id) || d.data.id === arc.data.id;
+    }),
+    results.radius
+  ); /* Add gray modulation for the labels */
 }
 
 function setTitle(title) {
@@ -395,23 +412,17 @@ function moveEdgePoints(path) {
   return path;
 }
 
-function drawLabels(g, nodes, radius) {
+function drawLabels(g, data, radius) {
   // show label if large enough, and there is in fact one
-  nodes = nodes
-    .filter(
-      node =>
-        node.data.parentEigenfactor > 0.005 &&
-        node.data.label !== "NO SUGGESTION"
-    )
-    .map(
-      d => (
-        (d.angle = (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360),
-        d
-      )
-    );
+  const labels = data.map(d => {
+    return {
+      angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+      text: d.data.label
+    };
+  });
   return g
     .selectAll("text")
-    .data(nodes)
+    .data(labels)
     .enter()
     .append("text")
     .attr("class", "label")
@@ -425,12 +436,12 @@ function drawLabels(g, nodes, radius) {
         ",0)" +
         (d.angle < 180 ? "" : "rotate(180)")
       );
-    })
+    }) /* TODO: set the exact radius */
     .attr("text-anchor", function(d) {
       return d.angle < 180 ? "start" : "end";
     })
     .text(function(d) {
-      return d.data.label;
+      return d.text;
     });
 }
 
