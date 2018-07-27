@@ -1,11 +1,14 @@
-setTimeout(function() {
-  d3
-    .select("body")
-    .append("button")
-    .attr("id", "fullscreen")
-    .text("Fullscreen")
-    .on("click", goFullscreen);
-}, 200);
+var fullscreenEnabled = !document.location.hash.match(/^#nofullscreen/);
+
+if (fullscreenEnabled) {
+  setTimeout(function() {
+    d3.select("body")
+      .append("button")
+      .attr("id", "fullscreen")
+      .text("Fullscreen")
+      .on("click", goFullscreen);
+  }, 200);
+}
 
 function goFullscreen() {
   this._exitFired = false;
