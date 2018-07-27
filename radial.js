@@ -1,18 +1,17 @@
 const svgcssradial = `
-.link {
+g#links path.link {
   /*stroke: #333;*/
   /*stroke-opacity: 0.2;*/
   /*stroke-width: 0.2;*/
   fill: none;
   pointer-events: none;
 }
-path.innerArc:hover { fill: #444444; }
-path.outerArc:hover { fill: #444444; }
+g#labels text.label { fill: #888888; font-family: flamalightregular; font-size: 13px; }
 
-text.node { fill: #888888; font-family: flamalightregular; font-size: 13px; }
-
-path.innerArc.clicked { fill: #222222 }
-path.innerArc.unlinked { fill: #BBBBBA }
+g#innerArcs path.innerArc.clicked { fill: #222222 }
+g#innerArcs path.innerArc.unlinked { fill: #BBBBBA }
+g#innerArcs path.innerArc:hover { fill: #444444; }
+g#outerArcs path.outerArc:hover { fill: #444444; }
 `;
 
 config.titleHeight = 35;
@@ -77,9 +76,6 @@ function buildchart() {
     .attr("id", "radial")
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
 
-  const link = graph.append("g").selectAll(".link"),
-    node = graph.append("g").selectAll(".arc");
-
   const title = svg
     .append("g")
     .classed("maintitle", true)
@@ -89,10 +85,15 @@ function buildchart() {
     .append("text")
     .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
 
-  drawOuterArcs(graph.append("g"), groupsData, radius);
-  drawInnerArcs(graph.append("g"), leavesData, radius);
-  drawLabels(node, groupsData, radius);
-  drawLinks(link, linksData, 1000);
+  drawOuterArcs(graph.append("g").attr("id", "outerArcs"), groupsData, radius);
+  drawInnerArcs(graph.append("g").attr("id", "innerArcs"), leavesData, radius);
+  drawLabels(graph.append("g").attr("id", "labels"), groupsData, radius);
+  drawLinks(
+    graph.append("g").attr("id", "links"),
+    linksData,
+    1000,
+    getGrayLinkColor
+  );
 
   return svg.node();
 }
@@ -275,9 +276,9 @@ function setTitle(title) {
  * Graphical functions
  */
 
-function drawInnerArcs(node, data, radius) {
-  return node
-    .selectAll(".innerArc")
+function drawInnerArcs(g, data, radius) {
+  return g
+    .selectAll("path")
     .data(data)
     .enter()
     .append("path")
@@ -290,9 +291,9 @@ function drawInnerArcs(node, data, radius) {
     .on("click", handleClick);
 }
 
-function drawOuterArcs(node, data, radius) {
-  return node
-    .selectAll(".outerArc")
+function drawOuterArcs(g, data, radius) {
+  return g
+    .selectAll("path")
     .data(data)
     .enter()
     .append("path")
@@ -304,8 +305,9 @@ function drawOuterArcs(node, data, radius) {
     .on("mouseout", handleMouseOut);
 }
 
-function drawLinks(link, linksData, maxLinks) {
-  return link
+function drawLinks(g, linksData, maxLinks, colorFn) {
+  return g
+    .selectAll("path")
     .data(
       linksData
         .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
@@ -319,7 +321,7 @@ function drawLinks(link, linksData, maxLinks) {
       return line(path);
     })
     .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
-    .attr("stroke", d => getGreyLinkColor(d));
+    .attr("stroke", d => colorFn(d));
 }
 
 function moveEdgePoints(path) {
@@ -353,10 +355,11 @@ function drawLabels(g, nodes, radius) {
       )
     );
   return g
+    .selectAll("text")
     .data(nodes)
     .enter()
     .append("text")
-    .attr("class", "node")
+    .attr("class", "label")
     .attr("dy", "0.31em")
     .attr("transform", function(d) {
       return (
@@ -444,7 +447,7 @@ function addNodeColor(node) {
   return node;
 }
 
-function getGreyLinkColor(link) {
+function getGrayLinkColor(link) {
   const brightness = 56 - Math.floor(56 * Math.sqrt(link.normalizedWeight));
   const alpha = Math.sqrt(link.normalizedWeight) * 0.3 + 0.02;
   return d3.rgb(brightness, brightness, brightness, alpha).toString();
