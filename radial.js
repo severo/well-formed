@@ -134,12 +134,49 @@ function handleMouseOver(d, i) {
     .attr("dy", "1em")
     .text(label);
 
-  text
-    .append("tspan")
-    .classed("detail", true)
-    .attr("x", 4)
-    .attr("dy", "1em")
-    .text("Eigenfactor: " + cutAfter(value, 6));
+  if (clicked === -1 || clicked.data.id === d.data.id) {
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dy", "1em")
+      .text("Eigenfactor: " + cutAfter(value, 6));
+  } else {
+    const inArray = data.flowEdges.filter(
+      e => e.source === d.data.id && e.target === clicked.data.id
+    );
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dy", "1em")
+      .text("IN:");
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dx", "4.5em")
+      .text(
+        cutAfter(inArray.length === 1 ? inArray[0].normalizedWeight : 0, 6)
+      );
+    const outArray = data.flowEdges.filter(
+      e => e.source === clicked.data.id && e.target === d.data.id
+    );
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dy", "1em")
+      .text("OUT:");
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dx", "4.5em")
+      .text(
+        cutAfter(outArray.length === 1 ? outArray[0].normalizedWeight : 0, 6)
+      );
+  }
 
   const bbox = text.node().getBBox();
   rect.attr("width", bbox.width + 8).attr("height", bbox.height);
@@ -164,7 +201,7 @@ function handleMouseOut(d, i) {
 function handleClick(arc, i) {
   /* TODO: Be more consistent and careful with the state management.
    * Maybe use an array, or a null node placeholder */
-  if (arc.id === clicked.id) {
+  if (clicked !== -1 && arc.data.id === clicked.data.id) {
     goToNormalState();
   } else {
     goToSelectedState(arc);
