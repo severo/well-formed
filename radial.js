@@ -26,7 +26,7 @@ function buildchart() {
   );
   results.radialData = addAngleAndRadius(
     results.radialData,
-    radius,
+    radius - 10,
     initialAngle,
     results.radialData.value
   );
@@ -282,10 +282,10 @@ const line = d3
  */
 function addAngleAndRadius(node, radius, startAngle, maxValue) {
   /* Add angles and radius to current node */
-  node.startAngle = startAngle;
-  node.endAngle = startAngle + (node.value / maxValue) * 2 * Math.PI;
-  node.angleWidth = ((node.endAngle - node.startAngle) / 2) % (2 * Math.PI);
+  node.angleWidth = (node.value / maxValue) * Math.PI;
   node.padAngle = node.angleWidth > 0.003 ? 0.0015 : node.angleWidth;
+  node.startAngle = startAngle;
+  node.endAngle = startAngle + 2 * node.angleWidth;
   node.centerAngle = (node.endAngle + node.startAngle) / 2;
   node.radius = (radius * node.depth) / (node.depth + node.height);
 
