@@ -12,6 +12,7 @@ path.outerArc:hover { fill: #444444; }
 text.node { fill: #888888; font-family: flamalightregular; font-size: 13px; }
 
 path.innerArc.clicked { fill: #222222 }
+path.innerArc.unlinked { fill: #BBBBBA }
 `;
 
 config.titleHeight = 35;
@@ -228,7 +229,16 @@ function selectArc(arc) {
   /* Later: use the same function to select a category */
   const innerArcs = d3.selectAll("svg .innerArc");
   innerArcs.classed("clicked", d => d.data.id === arc.data.id);
-  return;
+
+  const links = data.flowEdges.filter(
+    link => link.source === arc.data.id || link.target === arc.data.id
+  );
+  const sourceArcs = new Set(links.map(l => l.source));
+  const targetArcs = new Set(links.map(l => l.target));
+  innerArcs.classed(
+    "unlinked",
+    d => !sourceArcs.has(d.data.id) && !targetArcs.has(d.data.id)
+  );
 }
 
 function setTitle(title) {
