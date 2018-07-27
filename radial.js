@@ -269,7 +269,7 @@ function outerArc(radius) {
 
 const line = d3
   .radialLine()
-  .curve(d3.curveBundle.beta(0.85))
+  .curve(d3.curveBundle.beta(0.8))
   .radius(d => d.radius)
   .angle(d => d.centerAngle);
 
