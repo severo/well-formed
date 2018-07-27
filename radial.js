@@ -9,9 +9,10 @@ g#links path.link {
 g#labels text.label { fill: #888888; font-family: flamalightregular; font-size: 13px; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
-g#innerArcs path.innerArc.unlinked { fill: #BBBBBA }
+g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
 g#innerArcs path.innerArc:hover { fill: #444444; }
 g#outerArcs path.outerArc:hover { fill: #444444; }
+g#outerArcs path.outerArc.unlinked { fill: #DDDDDD; }
 `;
 
 config.titleHeight = 35;
@@ -245,7 +246,7 @@ function goToSelectedState(arc) {
 function selectArc(arc) {
   setTitle(arc.data.longLabel);
 
-  /* Later: use the same function to select a category */
+  /* TODO: use the same function to select a category */
   const innerArcs = d3.selectAll("svg .innerArc");
   innerArcs.classed("clicked", d => d.data.id === arc.data.id);
 
@@ -312,6 +313,11 @@ function selectArc(arc) {
       return color.darker();
     }
   );
+
+  /* Outer arcs */
+  d3.select("g#outerArcs")
+    .selectAll(".outerArc")
+    .classed("unlinked", true);
 }
 
 function setTitle(title) {
