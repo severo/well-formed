@@ -77,6 +77,15 @@ function buildchart() {
   const link = graph.append("g").selectAll(".link"),
     node = graph.append("g").selectAll(".node");
 
+  const title = svg
+    .append("g")
+    .classed("maintitle", true)
+    .attr("transform", `translate(${[0, -config.titleHeight]})`);
+  title.append("rect").attr("height", config.titleHeight);
+  title
+    .append("text")
+    .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
+
   drawOuterArcs(graph.append("g"), groupsData, radius);
   drawInnerArcs(graph.append("g"), leavesData, radius);
   drawLabels(node, groupsData, radius);
@@ -152,6 +161,37 @@ function handleMouseOut(d, i) {
   d3.select("#t-" + i).remove();
 }
 
+function handleClick(arc, i) {
+  /* TODO: Be more consistent and careful with the state management.
+   * Maybe use an array, or a null node placeholder */
+  if (arc.id === clicked.id) {
+    goToNormalState();
+  } else {
+    goToSelectedState(arc);
+  }
+}
+
+function goToNormalState() {
+  clicked = -1;
+  setTitle("");
+}
+
+function goToSelectedState(arc) {
+  selectArc(arc);
+  clicked = arc;
+}
+
+function selectArc(arc) {
+  setTitle(arc.data.longLabel);
+}
+
+function setTitle(title) {
+  const text = d3.select("svg .maintitle text");
+  text.text(title);
+  const w = text.node().getBBox().width;
+  d3.select("svg .maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
+}
+
 /*
  * Graphical functions
  */
@@ -166,7 +206,8 @@ function drawInnerArcs(node, data, radius) {
     .attr("d", innerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut);
+    .on("mouseout", handleMouseOut)
+    .on("click", handleClick);
 }
 
 function drawOuterArcs(node, data, radius) {
