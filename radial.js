@@ -7,7 +7,7 @@ g#links path.link {
   pointer-events: none;
 }
 g#links path.link.colour { mix-blend-mode: multiply }
-g#labels text.label { font-family: flamalightregular; font-size: 13px; }
+g#labels text.label { font-family: flamalightregular; font-size: 13px; mix-blend-mode: darken; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
 g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
@@ -24,7 +24,7 @@ config.titleHeight = 35;
  * Build the chart
  */
 function buildchart() {
-  results.radius = Math.min(width, height) / 2 - 40;
+  results.radius = Math.min(width, height) / 2 - 50;
   const initialAngle = Math.PI / 5; /* TODO: understand why */
   results.maxLinks = 1000;
 
@@ -33,7 +33,7 @@ function buildchart() {
   );
   results.radialData = addAngleAndRadius(
     results.radialData,
-    results.radius - 10,
+    results.radius,
     initialAngle,
     results.radialData.value
   );
@@ -280,7 +280,7 @@ function goToNormalState() {
     results.leavesData,
     results.radius
   );
-  drawLabels(
+  drawOuterArcsLabels(
     g.append("g").attr("id", "labels"),
     results.groupsData
       .filter(
@@ -386,7 +386,7 @@ function selectInnerArc(arc) {
 
   /* Labels */
   d3.select("g#labels").remove();
-  drawLabels(
+  drawInnerArcsLabels(
     d3
       .select("g#all")
       .append("g")
@@ -491,7 +491,7 @@ function selectOuterArc(arc) {
     .select("g#all")
     .append("g")
     .attr("id", "labels");
-  drawLabels(
+  drawOuterArcsLabels(
     g,
     results.groupsData.filter(d => d.data.id === arc.data.id).map(d => {
       return {
@@ -502,7 +502,7 @@ function selectOuterArc(arc) {
     }),
     results.radius
   );
-  drawLabels(
+  drawInnerArcsLabels(
     g,
     results.leavesData
       .filter(d => {
@@ -598,6 +598,12 @@ function moveEdgePoints(path) {
   return path;
 }
 
+function drawInnerArcsLabels(g, labels, radius) {
+  drawLabels(g, labels, radius);
+}
+function drawOuterArcsLabels(g, labels, radius) {
+  drawLabels(g, labels, radius + 14);
+}
 function drawLabels(g, labels, radius) {
   return g
     .selectAll("text")
@@ -611,7 +617,7 @@ function drawLabels(g, labels, radius) {
         "rotate(" +
         (d.angle - 90) +
         ")translate(" +
-        (radius + 20) +
+        (radius + 28) +
         ",0)" +
         (d.angle < 180 ? "" : "rotate(180)")
       );
@@ -630,15 +636,15 @@ function drawLabels(g, labels, radius) {
 function innerArc(radius) {
   return d3
     .arc()
-    .outerRadius(radius)
-    .innerRadius(radius - 10);
+    .outerRadius(radius + 10)
+    .innerRadius(radius);
 }
 
 function outerArc(radius) {
   return d3
     .arc()
-    .outerRadius(radius + 11)
-    .innerRadius(radius + 1);
+    .outerRadius(radius + 21)
+    .innerRadius(radius + 11);
 }
 
 const line = d3
