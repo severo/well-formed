@@ -379,7 +379,6 @@ function selectInnerArc(arc) {
         })
       );
       color.opacity = 0.3 + 0.6 * link.normalizedWeight;
-      /* TODO: reproduce the Flare MULTIPLY blend mode to darken */
       return color;
     },
     true
@@ -479,7 +478,6 @@ function selectOuterArc(arc) {
         })
       );
       color.opacity = 0.3 + 0.6 * link.normalizedWeight;
-      // TODO: reproduce the Flare MULTIPLY blend mode to darken
       return color;
     },
     true
@@ -574,7 +572,10 @@ function drawLinks(g, linksData, colorFn, colourClass = false) {
       const path = moveEdgePoints(link.source.path(link.target));
       return line(path);
     })
-    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
+    .attr(
+      "stroke-width",
+      d => (1 + 5 * d.normalizedWeight) / (colourClass ? 1 : 2)
+    )
     .attr("stroke", d => colorFn(d))
     .classed("colour", colourClass);
 }
