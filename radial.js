@@ -11,6 +11,8 @@ g#labels text.label { font-family: flamalightregular; font-size: 13px; }
 g#innerArcs path.innerArc.clicked { fill: #222222 }
 g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
 g#innerArcs path.innerArc:hover { fill: #444444; }
+
+g#outerArcs path.outerArc.clicked { fill: #222222 }
 g#outerArcs path.outerArc:hover { fill: #444444; }
 g#outerArcs path.outerArc.unlinked { fill: #DDDDDD; }
 `;
@@ -401,6 +403,11 @@ function selectInnerArc(arc) {
 
 function selectOuterArc(arc) {
   setTitle(arc.data.label);
+  // Outer arcs
+  d3.select("g#outerArcs")
+    .selectAll(".outerArc")
+    .classed("unlinked", d => d.data.id !== arc.data.id)
+    .classed("clicked", d => d.data.id === arc.data.id);
 }
 
 function setTitle(title) {
