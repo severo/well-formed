@@ -2,32 +2,6 @@
  * CSS for the HTML page
  */
 
-body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background: #f0f0f0;
-  font-family: "flamalightregular";
-  line-height: 1.5;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-button#fullscreen {
-  position: absolute;
-  top: 4px;
-  right: 1em;
-  border: none;
-  text-transform: uppercase;
-  background: #dddddd;
-  color: #333;
-  font-size: 12px;
-  padding: 4px 5px;
-  font-family: "flamalightregular";
-}
-
 @font-face {
   font-family: 'flamamediumregular';
   src: url('assets/flamamediumregular.woff2') format('woff2'),
@@ -43,3 +17,219 @@ button#fullscreen {
   font-weight: normal;
   font-style: normal;
 }
+
+body {
+  margin: 0;
+  padding: 0;
+  /*overflow: hidden;*/
+  background: #f0f0f0;
+  font-family: "flamalightregular";
+  line-height: 1.5;
+  color: #333;
+}
+
+
+* {
+  box-sizing: border-box;
+}
+
+a{
+  color: inherit;
+  text-decoration: none;
+}
+
+p a {
+  color: #5A4ED9;
+}
+
+iframe{
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: none;
+
+  float: left;
+}
+
+#cHeader_navigation{
+  font-size: .8em;
+  color: #777;
+  margin: -.3em 0 .3em;
+}
+
+h1{
+  margin: 0 0 .5em;
+  padding: 0;
+  float: left;
+  text-transform: uppercase;
+  font-size: 1.5em;
+  letter-spacing: .08em;
+}
+
+.header{
+  background: white;
+  padding: 1em 1em 0;
+  width: 100%;
+  overflow: auto;
+}
+
+.content {
+  width: 100%;
+  height: 100vh;
+  clear: both;
+}
+
+.large{
+  font-size: 1.25em;
+}
+
+
+.content p{
+  float: left;
+  max-width: 32em;
+  margin: 1em;
+}
+
+.content p strong{
+  font-weight: bold;
+  /*text-transform: uppercase;*/
+  letter-spacing: .02em;
+  margin-right: .3em;
+}
+
+.menu{
+  display: block;
+  float: right;
+  padding: 0;
+  margin: .6em .3em 0 0;
+  overflow: auto;
+}
+
+@media (max-width:960px) {
+
+  h1{
+    float: none;
+  }
+
+  .menu{
+    float: left;
+    margin: 0;
+  }
+}
+
+.menu.teaser{
+  padding: 1em;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  display: grid;
+  width: 100%;
+}
+
+@media (max-width:1800px) {
+  .menu.teaser{
+    grid-template-columns: 1fr 1fr;
+   }
+}
+
+@media (max-width:960px) {
+  .menu.teaser{
+    grid-template-columns: 1fr;
+   }
+}
+
+.menu li{
+  list-style: none;
+  display: block;
+  margin: 0 0 0 -.6em;
+  padding: 0 1em;
+  float: left;
+
+  /*border: 1px solid red;*/
+}
+
+
+.menu li img{
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.menu li span{
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: .3em 0 1em 0;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-size: .8em;
+}
+
+.menu li a{
+  display: inline-block;
+  width: 100%;
+}
+
+
+.active{
+  font-weight: bold;
+  border-bottom: 3px solid #555;
+}
+
+.content.grid{
+  display: grid;
+  grid-template-areas: "vis vis vis vis" ". info-text-1 info-text-2 ."
+  ;
+  grid-template-columns: 1fr auto auto 1fr;
+  grid-template-rows: minmax(800px, 1fr) auto;
+  width: auto;
+  height: auto;
+  padding-top: 10px;
+}
+
+@media (min-width:1400px) and (min-height:800px) {
+  .content.grid{
+    grid-template-areas: "vis info-text-1"
+    "vis info-text-2" "vis .";
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto minmax(800px, 1fr);
+    position: absolute;
+    top: 85px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+}
+
+@media (max-width:920px) {
+  .content.grid{
+    grid-template-areas: "vis" "info-text-1"
+    "info-text-2";
+    grid-template-columns: 1fr;
+  }
+}
+
+.content.grid .info-text-1{
+  grid-area: info-text-1;
+}
+
+.content.grid .info-text-2{
+  grid-area: info-text-2;
+}
+
+.content.grid .vis{
+  grid-area: vis;
+}
+
+button#fullscreen {
+  position: absolute;
+  top: 4px;
+  right: 1em;
+  border: none;
+  text-transform: uppercase;
+  background: #dddddd;
+  color: #333;
+  font-size: 12px;
+  padding: 4px 5px;
+  font-family: "flamalightregular";
+}
+

@@ -14,15 +14,6 @@
   		grid-template-areas: "vis sidebar"
   	}
 
-  	h1{
-  		margin: 0 0 1em;
-  		padding: 0;
-
-      text-transform: uppercase;
-  		font-size: 1.5em;
-      letter-spacing: .08em;
-  	}
-
     a{
       color: inherit;
       text-decoration: none;
@@ -32,52 +23,36 @@
   		grid-area: vis;
   	}
 
+    h1{
+      margin: 0 0 1em;
+      float: none;
+    }
+
+    .menu{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      width: 100%;
+      grid-gap: .5em;
+      margin: 0;
+      padding: 0;
+      height: auto;
+    }
+
+    .menu li{
+      margin: 0;
+      padding: 0;
+    }
+
+    .active{
+      border: none;
+    }
+
   	.sidebar{
   		grid-area: sidebar;
   		padding: 1em;
       position: relative;
       background: #FFF;
-  	}
-
-  	iframe{
-  		display: block;
-  		width: 100%;
-  		height: 100%;
-  		border: none;
-  	}
-
-  	.menu{
-  		display: grid;
-  		grid-template-columns: 1fr 1fr;
-  		grid-template-rows: auto auto;
-
-  		grid-gap: .5em;
-  		margin: 0;
-  		padding: 0;
-  	}
-
-  	.menu li{
-  		list-style: none;
-  		display: block;
-  		margin: 0;
-  		padding: 0;
-  		/*border: 1px solid red;*/
-  	}
-
-  	.menu li img{
-  		display: block;
-  		width: 100%;
-  		height: auto;
-  	}
-
-  	.menu li span{
-  		display: block;
-  		width: 100%;
-  		height: auto;
-      padding: .3em 0 1em 0;
-      text-transform: uppercase;
-      letter-spacing: .05em;
-      font-size: .8em;
   	}
 
     .credits {
@@ -88,10 +63,6 @@
       font-size: .8em;
     }
 
-    .active{
-      font-weight: bold;
-    }
-
     .annotation p {
       display: none;
     }
@@ -99,7 +70,6 @@
   </style>
   <script type="text/javascript">
     function menuChange(){
-      console.log(location.hash);
 
       var selectedItem = location.hash.split("#").pop();
       var allAnchors = document.querySelectorAll(".menu a");
@@ -135,7 +105,7 @@
 <body>
   <div class="container">
   	<div class="vis">
-  		<iframe id="visframe" name="visframe"></iframe>
+  		<iframe scrolling="no" id="visframe" name="visframe"></iframe>
   	</div>
 
   	<div class="sidebar">

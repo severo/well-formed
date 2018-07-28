@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>WELL-FORMED.EIGENFACTOR.ORG : Map</title>
+
+    <link rel="stylesheet" type="text/css" href="common.css">
+</head>
+
+<body>
+		<div class="header">
+
+			<div id="cHeader_navigation">
+				<a href="../../index.php"> Home </a> >
+				<a href="../../projects.php"> Projects </a> >
+				<a href="../researchArea_2.php"> Mapping Science </a>
+			</div>
+
+			<h1>well-formed&thinsp;.&thinsp;eigenfactor</h1>
+
+			<ul class="menu">
+
+				<li >
+					<a href="index.html">
+						<span>Home</span>
+					</a>
+				</li>
+
+				<li>
+					<a href="radial.html">
+						<span>Citation patterns</span>
+					</a>
+				</li>
+
+				<li>
+					<a href="time.html">
+						<span>Change over time</span>
+					</a>
+				</li>
+
+				<li>
+
+					<a href="treemap.html">
+						<span>Clustering</span>
+					</a>
+				</li>
+
+	      <li>
+	        <a class="active" href="map.html">
+	          <span>Map</span>
+	        </a>
+	      </li>
+
+			</ul>
+		</div>
+		<div class="content grid">
+
+			<p class="info-text-1">
+			<strong>Visualization</strong>
+			This map visualization puts journals, which frequently cite each other, closer together. You can drag the white magnification lens around to enlarge a part of the map for closer inspection. Clicking one of the nodes will highlight all its connections. If a journal is selected, the node sizes represent the relative amount of citation flow (incoming and outgoing) with respect to the selection; otherwise, they are scaled by their Eigenfactor&trade; Score. The map coordinates were calculated using <a href="http://cytoscape.org/">Cytoscape</a>
+			</p>
+
+			<p class="info-text-2">
+			<strong>Data set</strong>
+			We use a subset of the citation data from <a href="http://www.thomsonreuters.com/products_services/scientific/Journal_Citation_Reports">Thomson Reuters' Journal Citation Reports</a> 1997&ndash;2005. The complete data aggregate, at the journal level, approximately 60,000,000 citations from more than 7000 journals over the past decade. For an interesting subset, we select journals ordered by their <a href="http://www.eigenfactor.org/methods.htm">Article Influence&trade;</a> in 2005, but include no more than 25 journals from a single field. To make the subset coherent, we make sure that selected journals are included all years and that we cover the 10 journals with highest <a href="http://www.eigenfactor.org/methods.htm">Eigenfactor</a>&trade; score. To cluster the networks, we use the information-theoretic method presented in <a href="http://arxiv.org/abs/0707.0609">Maps of information flow reveal community structure in complex networks</a> (<a href="http://dx.doi.org/10.1073/pnas.0706851105">PNAS 105, 1118 (2008)</a>), which can reveal regularities of information flow across directed and weighted networks.
+			</p>
+
+			<iframe class="vis" src="map_vis.html" scrolling="no" ></iframe>
+
+
+	  </div>
+</body>
+
+</html>
