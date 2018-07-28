@@ -1,4 +1,5 @@
 const svgcsssankey = `
+button#fullscreen {right: 30px;}
 svg.sankey {margin-left: 30px}
 svg.sankey g.journals g.journal.clicked rect.node,
 svg.sankey g.journals g.journal:hover rect.node {fill: #222222}
