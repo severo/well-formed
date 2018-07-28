@@ -455,28 +455,30 @@ function selectOuterArc(arc) {
 
   // Links
   const links = d3.select("g#links").remove();
+  const linksData = results.linksData.filter(
+    l =>
+      childrenIds.includes(l.source.data.id) ||
+      childrenIds.includes(l.target.data.id)
+  );
+
   drawLinks(
     d3
       .select("g#all")
       .append("g")
       .attr("id", "links"),
-    results.linksData.filter(
-      l =>
-        childrenIds.includes(l.source.data.id) ||
-        childrenIds.includes(l.target.data.id)
-    ),
+    linksData,
     link => {
       const color = d3.rgb(
         getColorByIndexAndWeight({
           index: +link.source.parent.parent.id,
-          weight: link.localWeight,
+          weight: link.normalizedWeight,
           MIN_SAT: 0.4,
           MAX_SAT: 0.95,
           MIN_BRIGHTNESS: 0.8,
           MAX_BRIGHTNESS: 0.5
         })
       );
-      color.opacity = 0.3 + 0.6 * link.localWeight;
+      color.opacity = 0.3 + 0.6 * link.normalizedWeight;
       // TODO: reproduce the Flare MULTIPLY blend mode to darken
       return color;
     },
