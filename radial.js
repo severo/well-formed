@@ -76,6 +76,8 @@ function buildchart() {
     .append("g")
     .attr("id", "radial")
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
+  graph.append("g").attr("id", "all");
+  graph.append("g").attr("id", "tooltip");
 
   const title = svg
     .append("g")
@@ -96,7 +98,7 @@ function buildchart() {
  */
 
 function handleMouseOver(d, i) {
-  const svg = d3.select("g#radial");
+  const svg = d3.select("g#tooltip");
   const cursor = d3.mouse(this);
 
   // Ugly, will fix later
@@ -250,7 +252,7 @@ function goToNormalState() {
   clicked = -1;
   setTitle("");
 
-  const g = d3.select("g#radial");
+  const g = d3.select("g#all");
   g.select("g#innerArcs").remove();
   g.select("g#outerArcs").remove();
   g.select("g#labels").remove();
@@ -288,7 +290,7 @@ function goToNormalState() {
     results.linksData,
     1000,
     getGrayLinkColor
-  ); /* TODO: let the tooltip on top of the rest of SVG elements */
+  );
 }
 
 function goToSelectedState(arc) {
@@ -340,7 +342,7 @@ function selectArc(arc) {
   const links = d3.select("g#links").remove();
   drawLinks(
     d3
-      .select("g#radial")
+      .select("g#all")
       .append("g")
       .attr("id", "links"),
     results.linksData.filter(
@@ -376,7 +378,7 @@ function selectArc(arc) {
   d3.select("g#labels").remove();
   drawLabels(
     d3
-      .select("g#radial")
+      .select("g#all")
       .append("g")
       .attr("id", "labels"),
     results.leavesData
