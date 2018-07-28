@@ -561,10 +561,7 @@ function drawLinks(g, linksData, colorFn) {
       const path = moveEdgePoints(link.source.path(link.target));
       return line(path);
     })
-    .attr(
-      "stroke-width",
-      d => 1 + 5 * d.normalizedWeight
-    ) /* TODO: add /2 in normal mode?*/
+    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
     .attr("stroke", d => colorFn(d));
 }
 
