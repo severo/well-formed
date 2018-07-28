@@ -25,6 +25,7 @@ config.titleHeight = 35;
 function buildchart() {
   results.radius = Math.min(width, height) / 2 - 40;
   const initialAngle = Math.PI / 5; /* TODO: understand why */
+  results.maxLinks = 1000;
 
   results.radialData = centerChildNodes(
     stratifyTree(data.tree).sum(d => d.eigenfactor)
@@ -289,8 +290,9 @@ function goToNormalState() {
   );
   drawLinks(
     g.append("g").attr("id", "links"),
-    results.linksData,
-    1000,
+    results.linksData
+      .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
+      .slice(0, results.maxLinks),
     getGrayLinkColor
   );
 }
@@ -352,17 +354,17 @@ function selectInnerArc(arc) {
       .select("g#all")
       .append("g")
       .attr("id", "links"),
-    results.linksData.filter(
-      l => l.source.data.id === arc.data.id || l.target.data.id === arc.data.id
-    ),
-    1000,
+    results.linksData
+      .filter(
+        l =>
+          l.source.data.id === arc.data.id || l.target.data.id === arc.data.id
+      )
+      .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
+      .slice(0, results.maxLinks),
     link => {
       const color = d3.rgb(
         getColorByIndexAndWeight({
-          index:
-            link.source.depth === 3
-              ? +link.source.parent.parent.id
-              : +link.source.parent.id,
+          index: +link.source.parent.parent.id,
           weight: link.normalizedWeight,
           MIN_SAT: 0.4,
           MAX_SAT: 0.95,
@@ -408,6 +410,39 @@ function selectOuterArc(arc) {
     .selectAll(".outerArc")
     .classed("unlinked", d => d.data.id !== arc.data.id)
     .classed("clicked", d => d.data.id === arc.data.id);
+
+  // Links
+  const links = d3.select("g#links").remove();
+  const childrenIds = arc.children.map(e => e.data.id);
+  drawLinks(
+    d3
+      .select("g#all")
+      .append("g")
+      .attr("id", "links"),
+    results.linksData
+      .filter(
+        l =>
+          childrenIds.includes(l.source.data.id) ||
+          childrenIds.includes(l.target.data.id)
+      )
+      .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
+      .slice(0, results.maxLinks),
+    link => {
+      const color = d3.rgb(
+        getColorByIndexAndWeight({
+          index: +link.source.parent.parent.id,
+          weight: link.localWeight,
+          MIN_SAT: 0.4,
+          MAX_SAT: 0.95,
+          MIN_BRIGHTNESS: 0.8,
+          MAX_BRIGHTNESS: 0.5
+        })
+      );
+      color.opacity = 0.3 + 0.6 * link.localWeight;
+      // TODO: reproduce the Flare MULTIPLY blend mode to darken
+      return color.darker();
+    }
+  );
 }
 
 function setTitle(title) {
@@ -451,14 +486,10 @@ function drawOuterArcs(g, data, radius) {
     .on("click", handleClick);
 }
 
-function drawLinks(g, linksData, maxLinks, colorFn) {
+function drawLinks(g, linksData, colorFn) {
   return g
     .selectAll("path")
-    .data(
-      linksData
-        .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
-        .slice(0, maxLinks === undefined ? linksData.length : maxLinks)
-    )
+    .data(linksData)
     .enter()
     .append("path")
     .attr("class", "link")
@@ -466,7 +497,10 @@ function drawLinks(g, linksData, maxLinks, colorFn) {
       const path = moveEdgePoints(link.source.path(link.target));
       return line(path);
     })
-    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight) /* TODO: add /2 ?*/
+    .attr(
+      "stroke-width",
+      d => 1 + 5 * d.normalizedWeight
+    ) /* TODO: add /2 in normal mode?*/
     .attr("stroke", d => colorFn(d));
 }
 
