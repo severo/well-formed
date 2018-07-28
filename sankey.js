@@ -1,4 +1,5 @@
 const svgcsssankey = `
+svg.sankey {margin-left: 30px}
 svg.sankey g.journals g.journal.clicked rect.node,
 svg.sankey g.journals g.journal:hover rect.node {fill: #222222}
 svg.sankey g.journals g.journal:hover linearGradient.gradient stop,
@@ -13,11 +14,12 @@ const titleHeight = 20;
  * Build the chart
  */
 function buildchart() {
+  const sankeyWidth = width - 60;
   results.nodes = createNodes(
     data.trees,
     data.years,
     height,
-    width,
+    sankeyWidth,
     titleHeight
   );
   results.yearTitles = createYearTitles(results.nodes, titleHeight);
@@ -25,7 +27,7 @@ function buildchart() {
 
   const svg = d3
     .select("svg")
-    .attr("width", width)
+    .attr("width", sankeyWidth)
     .attr("height", height)
     .classed("sankey", true)
     .html(
@@ -89,17 +91,24 @@ function buildchart() {
       .text("Eigenfactor in " + d.year + ": " + cutAfter(d.eigenfactor, 6));
 
     const bbox = text.node().getBBox();
+    const svgBbox = d3
+      .select("svg.sankey")
+      .node()
+      .getBBox();
     rect.attr("width", bbox.width + 8).attr("height", bbox.height);
 
     /* Manage the bottom and right edges */
     const x =
       d.x0 +
       cursor[0] -
-      (d.x0 + cursor[0] + bbox.width + 8 + 2 > width ? bbox.width + 8 : 0);
+      (d.x0 + cursor[0] + bbox.width + 8 + 2 > svgBbox.width
+        ? bbox.width + 8
+        : 0);
     const y =
       d.y0 +
       cursor[1] +
-      (d.y0 + cursor[1] + bbox.height + 26 + 2 > height - config.titleHeight
+      (d.y0 + cursor[1] + bbox.height + 26 + 2 >
+      svgBbox.height - config.titleHeight
         ? -bbox.height - 6
         : 26);
 
