@@ -138,9 +138,7 @@ function handleMouseOver(d, i) {
       .attr("dy", "1em")
       .text("Eigenfactor: " + cutAfter(value, 6));
   } else {
-    const inArray = data.flowEdges.filter(
-      e => e.source === d.data.id && e.target === clicked.data.id
-    );
+    const inout = calcInOut(d, clicked);
     text
       .append("tspan")
       .classed("detail", true)
@@ -152,12 +150,7 @@ function handleMouseOver(d, i) {
       .classed("detail", true)
       .attr("x", 4)
       .attr("dx", "4.5em")
-      .text(
-        cutAfter(inArray.length === 1 ? inArray[0].normalizedWeight : 0, 6)
-      );
-    const outArray = data.flowEdges.filter(
-      e => e.source === clicked.data.id && e.target === d.data.id
-    );
+      .text(cutAfter(inout[0], 6));
     text
       .append("tspan")
       .classed("detail", true)
@@ -169,9 +162,7 @@ function handleMouseOver(d, i) {
       .classed("detail", true)
       .attr("x", 4)
       .attr("dx", "4.5em")
-      .text(
-        cutAfter(outArray.length === 1 ? outArray[0].normalizedWeight : 0, 6)
-      );
+      .text(cutAfter(inout[1], 6));
   }
 
   const bbox = text.node().getBBox();
@@ -188,6 +179,23 @@ function handleMouseOver(d, i) {
       : 26);
 
   g.attr("transform", `translate(${x},${y})`);
+}
+
+function calcInDepth3(source, target) {
+  const v = data.flowEdges
+    .filter(l => l.source === source.data.id && l.target === target.data.id)
+    .map(l => l.normalizedWeight);
+  return v.length === 1 ? v[0] : 0;
+}
+
+function calcInOut(source, target) {
+  /* TODO: manage source / target, depth 2 and 3 */
+  const inout = [0, 0];
+  if (source.depth === 3 && target.depth === 3) {
+    inout[0] = calcInDepth3(source, target);
+    inout[1] = calcInDepth3(target, source);
+  }
+  return inout;
 }
 
 function handleMouseOut(d, i) {
