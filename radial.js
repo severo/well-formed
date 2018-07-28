@@ -6,6 +6,7 @@ g#links path.link {
   fill: none;
   pointer-events: none;
 }
+g#links path.link.colour { mix-blend-mode: multiply }
 g#labels text.label { font-family: flamalightregular; font-size: 13px; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
@@ -379,8 +380,9 @@ function selectInnerArc(arc) {
       );
       color.opacity = 0.3 + 0.6 * link.normalizedWeight;
       /* TODO: reproduce the Flare MULTIPLY blend mode to darken */
-      return color.darker();
-    }
+      return color;
+    },
+    true
   );
 
   /* Labels */
@@ -476,8 +478,9 @@ function selectOuterArc(arc) {
       );
       color.opacity = 0.3 + 0.6 * link.localWeight;
       // TODO: reproduce the Flare MULTIPLY blend mode to darken
-      return color.darker();
-    }
+      return color;
+    },
+    true
   );
 
   // Labels
@@ -558,7 +561,7 @@ function drawOuterArcs(g, data, radius) {
     .on("click", handleClick);
 }
 
-function drawLinks(g, linksData, colorFn) {
+function drawLinks(g, linksData, colorFn, colourClass = false) {
   return g
     .selectAll("path")
     .data(linksData)
@@ -570,7 +573,8 @@ function drawLinks(g, linksData, colorFn) {
       return line(path);
     })
     .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
-    .attr("stroke", d => colorFn(d));
+    .attr("stroke", d => colorFn(d))
+    .classed("colour", colourClass);
 }
 
 function moveEdgePoints(path) {
