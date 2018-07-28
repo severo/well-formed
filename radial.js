@@ -415,6 +415,8 @@ function selectOuterArc(arc) {
   const childrenIds = arc.children.map(e => e.data.id);
 
   const innerArcs = d3.selectAll("g#innerArcs .innerArc");
+  innerArcs.classed("clicked", false);
+
   const localWeights = new Map([[arc.data.id, 1]]);
   data.flowEdges
     .filter(link => childrenIds.includes(link.source))
