@@ -1,11 +1,5 @@
 const svgcssradial = `
-g#links path.link {
-  /*stroke: #333;*/
-  /*stroke-opacity: 0.2;*/
-  /*stroke-width: 0.2;*/
-  fill: none;
-  pointer-events: none;
-}
+g#links path.link { fill: none; pointer-events: none; }
 g#links path.link.colour { mix-blend-mode: multiply }
 g#labels text.label { font-family: flamalightregular; font-size: 13px; mix-blend-mode: darken; }
 
