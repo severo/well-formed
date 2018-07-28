@@ -38,8 +38,7 @@ function buildchart() {
   results.leavesData = results.radialData.leaves();
   results.groupsData = results.radialData
     .descendants()
-    .filter(d => d.depth == 2)
-    .map(d => ((d.yy = (3 / 2) * d.y), d));
+    .filter(d => d.depth == 2);
 
   results.radialDataLookup = results.radialData.descendants().reduce((a, c) => {
     a[c.data.id] = c;
