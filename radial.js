@@ -1,15 +1,20 @@
 const svgcssradial = `
-.link {
+g#links path.link {
   /*stroke: #333;*/
   /*stroke-opacity: 0.2;*/
   /*stroke-width: 0.2;*/
   fill: none;
   pointer-events: none;
 }
-path.innerArc:hover { fill: #444444; }
-path.outerArc:hover { fill: #444444; }
+g#labels text.label { font-family: flamalightregular; font-size: 13px; }
 
-text.node { fill: #888888; font-family: flamalightregular; font-size: 13px; }
+g#innerArcs path.innerArc.clicked { fill: #222222 }
+g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
+g#innerArcs path.innerArc:hover { fill: #444444; }
+
+g#outerArcs path.outerArc.clicked { fill: #222222 }
+g#outerArcs path.outerArc:hover { fill: #444444; }
+g#outerArcs path.outerArc.unlinked { fill: #DDDDDD; }
 `;
 
 config.titleHeight = 35;
@@ -18,38 +23,39 @@ config.titleHeight = 35;
  * Build the chart
  */
 function buildchart() {
-  const radius = Math.min(width, height) / 2 - 40;
+  results.radius = Math.min(width, height) / 2 - 40;
   const initialAngle = Math.PI / 5; /* TODO: understand why */
+  results.maxLinks = 1000;
 
   results.radialData = centerChildNodes(
     stratifyTree(data.tree).sum(d => d.eigenfactor)
   );
   results.radialData = addAngleAndRadius(
     results.radialData,
-    radius - 10,
+    results.radius - 10,
     initialAngle,
     results.radialData.value
   );
   results.radialData = results.radialData.each(addNodeColor);
 
-  const leavesData = results.radialData.leaves();
-  const groupsData = results.radialData
+  results.leavesData = results.radialData.leaves();
+  results.groupsData = results.radialData
     .descendants()
-    .filter(d => d.depth == 2)
-    .map(d => ((d.yy = (3 / 2) * d.y), d));
+    .filter(d => d.depth == 2);
 
-  const radialDataLookup = results.radialData.descendants().reduce((a, c) => {
+  results.radialDataLookup = results.radialData.descendants().reduce((a, c) => {
     a[c.data.id] = c;
     return a;
   }, {});
-  const linksData = data.flowEdges.map(link => {
+  results.linksData = data.flowEdges.map(link => {
     return {
-      source: radialDataLookup[link.source],
-      target: radialDataLookup[link.target],
+      source: results.radialDataLookup[link.source],
+      target: results.radialDataLookup[link.target],
       weight: link.weight,
       normalizedWeight: link.normalizedWeight
     };
   });
+  results.linksLookup = new Map();
 
   const svg = d3
     .select("svg")
@@ -73,9 +79,8 @@ function buildchart() {
     .append("g")
     .attr("id", "radial")
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
-
-  const link = graph.append("g").selectAll(".link"),
-    node = graph.append("g").selectAll(".node");
+  graph.append("g").attr("id", "all");
+  graph.append("g").attr("id", "tooltip");
 
   const title = svg
     .append("g")
@@ -86,10 +91,7 @@ function buildchart() {
     .append("text")
     .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
 
-  drawOuterArcs(graph.append("g"), groupsData, radius);
-  drawInnerArcs(graph.append("g"), leavesData, radius);
-  drawLabels(node, groupsData, radius);
-  drawLinks(link, linksData, 1000);
+  goToNormalState();
 
   return svg.node();
 }
@@ -99,7 +101,7 @@ function buildchart() {
  */
 
 function handleMouseOver(d, i) {
-  const svg = d3.select("g#radial");
+  const svg = d3.select("g#tooltip");
   const cursor = d3.mouse(this);
 
   // Ugly, will fix later
@@ -142,9 +144,7 @@ function handleMouseOver(d, i) {
       .attr("dy", "1em")
       .text("Eigenfactor: " + cutAfter(value, 6));
   } else {
-    const inArray = data.flowEdges.filter(
-      e => e.source === d.data.id && e.target === clicked.data.id
-    );
+    const inout = getInOut(d, clicked);
     text
       .append("tspan")
       .classed("detail", true)
@@ -156,12 +156,7 @@ function handleMouseOver(d, i) {
       .classed("detail", true)
       .attr("x", 4)
       .attr("dx", "4.5em")
-      .text(
-        cutAfter(inArray.length === 1 ? inArray[0].normalizedWeight : 0, 6)
-      );
-    const outArray = data.flowEdges.filter(
-      e => e.source === clicked.data.id && e.target === d.data.id
-    );
+      .text(cutAfter(inout.in, 6));
     text
       .append("tspan")
       .classed("detail", true)
@@ -173,9 +168,7 @@ function handleMouseOver(d, i) {
       .classed("detail", true)
       .attr("x", 4)
       .attr("dx", "4.5em")
-      .text(
-        cutAfter(outArray.length === 1 ? outArray[0].normalizedWeight : 0, 6)
-      );
+      .text(cutAfter(inout.out, 6));
   }
 
   const bbox = text.node().getBBox();
@@ -192,6 +185,56 @@ function handleMouseOver(d, i) {
       : 26);
 
   g.attr("transform", `translate(${x},${y})`);
+}
+
+function calcInDepth3(source, target) {
+  const v = data.flowEdges
+    .filter(l => l.source === source.data.id && l.target === target.data.id)
+    .map(l => l.normalizedWeight);
+  return v.length === 1 ? v[0] : 0;
+}
+
+function getInOut(source, target) {
+  const lo = results.linksLookup;
+  const sId = source.data.id;
+  const tId = target.data.id;
+
+  if (!lo.has(sId)) lo.set(sId, new Map());
+
+  if (!lo.get(sId).has(tId)) {
+    if (lo.has(tId) && lo.get(tId).has(sId)) {
+      lo.get(sId).set(tId, {
+        in: lo.get(tId).get(sId).out,
+        out: lo.get(tId).get(sId).in
+      });
+    } else if (source.depth === 3 && target.depth === 3) {
+      lo.get(sId).set(tId, {
+        in: calcInDepth3(source, target),
+        out: calcInDepth3(target, source)
+      });
+    } else if ("children" in target) {
+      lo.get(sId).set(
+        tId,
+        target.children.reduce(
+          (a, c) => {
+            const inout = getInOut(source, c);
+            a.in += inout.in;
+            a.out += inout.out;
+            return a;
+          },
+          { in: 0, out: 0 }
+        )
+      );
+    } else {
+      const inout = getInOut(target, source);
+      lo.get(sId).set(tId, {
+        in: inout.out,
+        out: inout.in
+      });
+    }
+  }
+
+  return lo.get(sId).get(tId);
 }
 
 function handleMouseOut(d, i) {
@@ -211,15 +254,259 @@ function handleClick(arc, i) {
 function goToNormalState() {
   clicked = -1;
   setTitle("");
+
+  const g = d3.select("g#all");
+  g.select("g#innerArcs").remove();
+  g.select("g#outerArcs").remove();
+  g.select("g#labels").remove();
+  g.select("g#links").remove();
+
+  drawOuterArcs(
+    g.append("g").attr("id", "outerArcs"),
+    results.groupsData,
+    results.radius
+  );
+  drawInnerArcs(
+    g.append("g").attr("id", "innerArcs"),
+    results.leavesData,
+    results.radius
+  );
+  drawLabels(
+    g.append("g").attr("id", "labels"),
+    results.groupsData
+      .filter(
+        group =>
+          group.data.parentEigenfactor > 0.005 &&
+          group.data.label !== "NO SUGGESTION"
+      ) // show label if large enough, and there is in fact one
+      .map(d => {
+        return {
+          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          text: d.data.label,
+          fill: "#888888"
+        };
+      }),
+    results.radius
+  );
+  drawLinks(
+    g.append("g").attr("id", "links"),
+    results.linksData
+      .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
+      .slice(0, results.maxLinks),
+    getGrayLinkColor
+  );
 }
 
 function goToSelectedState(arc) {
-  selectArc(arc);
+  if (arc.depth === 3) selectInnerArc(arc);
+  else selectOuterArc(arc);
   clicked = arc;
 }
 
-function selectArc(arc) {
+function selectInnerArc(arc) {
   setTitle(arc.data.longLabel);
+
+  const innerArcs = d3.selectAll("svg .innerArc");
+  innerArcs.classed("clicked", d => d.data.id === arc.data.id);
+
+  const localWeights = new Map([[arc.data.id, 1]]);
+  data.flowEdges
+    .filter(link => link.source === arc.data.id)
+    .forEach(l =>
+      localWeights.set(
+        l.target,
+        (localWeights.has(l.target) ? localWeights.get(l.target) : 0) +
+          l.normalizedWeight
+      )
+    );
+  data.flowEdges
+    .filter(link => link.target === arc.data.id)
+    .forEach(l =>
+      localWeights.set(
+        l.source,
+        (localWeights.has(l.source) ? localWeights.get(l.source) : 0) +
+          l.normalizedWeight
+      )
+    );
+  innerArcs.classed(
+    "unlinked",
+    d => !localWeights.has(d.data.id) && d.data.id !== arc.data.id
+  );
+  innerArcs.filter(d => localWeights.has(d.data.id)).attr("fill", d => {
+    return getColorByIndexAndWeight({
+      index: +d.parent.parent.id,
+      weight: localWeights.get(d.data.id),
+      MIN_SAT: 0.4,
+      MAX_SAT: 0.95,
+      MIN_BRIGHTNESS: 0.8,
+      MAX_BRIGHTNESS: 0.5
+    });
+  });
+
+  /* Outer arcs */
+  d3.select("g#outerArcs")
+    .selectAll(".outerArc")
+    .classed("unlinked", true);
+
+  /* Links */
+  const links = d3.select("g#links").remove();
+  drawLinks(
+    d3
+      .select("g#all")
+      .append("g")
+      .attr("id", "links"),
+    results.linksData.filter(
+      l => l.source.data.id === arc.data.id || l.target.data.id === arc.data.id
+    ),
+    link => {
+      const color = d3.rgb(
+        getColorByIndexAndWeight({
+          index: +link.source.parent.parent.id,
+          weight: link.normalizedWeight,
+          MIN_SAT: 0.4,
+          MAX_SAT: 0.95,
+          MIN_BRIGHTNESS: 0.8,
+          MAX_BRIGHTNESS: 0.5
+        })
+      );
+      color.opacity = 0.3 + 0.6 * link.normalizedWeight;
+      /* TODO: reproduce the Flare MULTIPLY blend mode to darken */
+      return color.darker();
+    }
+  );
+
+  /* Labels */
+  d3.select("g#labels").remove();
+  drawLabels(
+    d3
+      .select("g#all")
+      .append("g")
+      .attr("id", "labels"),
+    results.leavesData
+      .filter(d => {
+        return localWeights.has(d.data.id) || d.data.id === arc.data.id;
+      })
+      .map(d => {
+        const brightness =
+          221 - Math.min(153, Math.floor(localWeights.get(d.data.id) * 153));
+        const fill = d3.rgb(brightness, brightness, brightness).toString();
+        return {
+          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          text: d.data.label,
+          fill: d.data.id === arc.data.id ? "#222222" : fill
+        };
+      }),
+    results.radius
+  );
+}
+
+function selectOuterArc(arc) {
+  setTitle(arc.data.label);
+
+  const childrenIds = arc.children.map(e => e.data.id);
+
+  const innerArcs = d3.selectAll("g#innerArcs .innerArc");
+  const localWeights = new Map([[arc.data.id, 1]]);
+  data.flowEdges
+    .filter(link => childrenIds.includes(link.source))
+    .forEach(l =>
+      localWeights.set(
+        l.target,
+        (localWeights.has(l.target) ? localWeights.get(l.target) : 0) +
+          l.normalizedWeight
+      )
+    );
+  data.flowEdges
+    .filter(link => childrenIds.includes(link.target))
+    .forEach(l =>
+      localWeights.set(
+        l.source,
+        (localWeights.has(l.source) ? localWeights.get(l.source) : 0) +
+          l.normalizedWeight
+      )
+    );
+  innerArcs.classed("unlinked", d => !localWeights.has(d.data.id));
+  innerArcs.filter(d => localWeights.has(d.data.id)).attr("fill", d => {
+    return getColorByIndexAndWeight({
+      index: +d.parent.parent.id,
+      weight: localWeights.get(d.data.id),
+      MIN_SAT: 0.4,
+      MAX_SAT: 0.95,
+      MIN_BRIGHTNESS: 0.8,
+      MAX_BRIGHTNESS: 0.5
+    });
+  });
+
+  // Outer arcs
+  d3.select("g#outerArcs")
+    .selectAll(".outerArc")
+    .classed("unlinked", d => d.data.id !== arc.data.id)
+    .classed("clicked", d => d.data.id === arc.data.id);
+
+  // Links
+  const links = d3.select("g#links").remove();
+  drawLinks(
+    d3
+      .select("g#all")
+      .append("g")
+      .attr("id", "links"),
+    results.linksData.filter(
+      l =>
+        childrenIds.includes(l.source.data.id) ||
+        childrenIds.includes(l.target.data.id)
+    ),
+    link => {
+      const color = d3.rgb(
+        getColorByIndexAndWeight({
+          index: +link.source.parent.parent.id,
+          weight: link.localWeight,
+          MIN_SAT: 0.4,
+          MAX_SAT: 0.95,
+          MIN_BRIGHTNESS: 0.8,
+          MAX_BRIGHTNESS: 0.5
+        })
+      );
+      color.opacity = 0.3 + 0.6 * link.localWeight;
+      // TODO: reproduce the Flare MULTIPLY blend mode to darken
+      return color.darker();
+    }
+  );
+
+  // Labels
+  d3.select("g#labels").remove();
+  const g = d3
+    .select("g#all")
+    .append("g")
+    .attr("id", "labels");
+  drawLabels(
+    g,
+    results.groupsData.filter(d => d.data.id === arc.data.id).map(d => {
+      return {
+        angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+        text: d.data.label,
+        fill: "#222222"
+      };
+    }),
+    results.radius
+  );
+  drawLabels(
+    g,
+    results.leavesData
+      .filter(d => {
+        return localWeights.has(d.data.id) && d.parent.data.id !== arc.data.id;
+      })
+      .map(d => {
+        const brightness =
+          221 - Math.min(153, Math.floor(localWeights.get(d.data.id) * 153));
+        const fill = d3.rgb(brightness, brightness, brightness).toString();
+        return {
+          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          text: d.data.label,
+          fill: fill
+        };
+      }),
+    results.radius
+  );
 }
 
 function setTitle(title) {
@@ -233,13 +520,14 @@ function setTitle(title) {
  * Graphical functions
  */
 
-function drawInnerArcs(node, data, radius) {
-  return node
-    .selectAll(".innerArc")
+function drawInnerArcs(g, data, radius) {
+  return g
+    .selectAll("path")
     .data(data)
     .enter()
     .append("path")
     .classed("innerArc", true)
+    .attr("id", d => d.data.id)
     .attr("d", innerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
@@ -247,26 +535,25 @@ function drawInnerArcs(node, data, radius) {
     .on("click", handleClick);
 }
 
-function drawOuterArcs(node, data, radius) {
-  return node
-    .selectAll(".outerArc")
+function drawOuterArcs(g, data, radius) {
+  return g
+    .selectAll("path")
     .data(data)
     .enter()
     .append("path")
     .classed("outerArc", true)
+    .attr("id", d => d.data.id)
     .attr("d", outerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut);
+    .on("mouseout", handleMouseOut)
+    .on("click", handleClick);
 }
 
-function drawLinks(link, linksData, maxLinks) {
-  return link
-    .data(
-      linksData
-        .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
-        .slice(0, maxLinks === undefined ? linksData.length : maxLinks)
-    )
+function drawLinks(g, linksData, colorFn) {
+  return g
+    .selectAll("path")
+    .data(linksData)
     .enter()
     .append("path")
     .attr("class", "link")
@@ -274,8 +561,8 @@ function drawLinks(link, linksData, maxLinks) {
       const path = moveEdgePoints(link.source.path(link.target));
       return line(path);
     })
-    .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
-    .attr("stroke", d => getGreyLinkColor(d));
+    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
+    .attr("stroke", d => colorFn(d));
 }
 
 function moveEdgePoints(path) {
@@ -294,25 +581,13 @@ function moveEdgePoints(path) {
   return path;
 }
 
-function drawLabels(g, nodes, radius) {
-  // show label if large enough, and there is in fact one
-  nodes = nodes
-    .filter(
-      node =>
-        node.data.parentEigenfactor > 0.005 &&
-        node.data.label !== "NO SUGGESTION"
-    )
-    .map(
-      d => (
-        (d.angle = (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360),
-        d
-      )
-    );
+function drawLabels(g, labels, radius) {
   return g
-    .data(nodes)
+    .selectAll("text")
+    .data(labels)
     .enter()
     .append("text")
-    .attr("class", "node")
+    .attr("class", "label")
     .attr("dy", "0.31em")
     .attr("transform", function(d) {
       return (
@@ -323,12 +598,13 @@ function drawLabels(g, nodes, radius) {
         ",0)" +
         (d.angle < 180 ? "" : "rotate(180)")
       );
-    })
+    }) /* TODO: set the exact radius */
     .attr("text-anchor", function(d) {
       return d.angle < 180 ? "start" : "end";
     })
+    .attr("fill", d => d.fill)
     .text(function(d) {
-      return d.data.label;
+      return d.text;
     });
 }
 
@@ -400,7 +676,7 @@ function addNodeColor(node) {
   return node;
 }
 
-function getGreyLinkColor(link) {
+function getGrayLinkColor(link) {
   const brightness = 56 - Math.floor(56 * Math.sqrt(link.normalizedWeight));
   const alpha = Math.sqrt(link.normalizedWeight) * 0.3 + 0.02;
   return d3.rgb(brightness, brightness, brightness, alpha).toString();
