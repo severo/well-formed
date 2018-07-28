@@ -52,6 +52,7 @@ function buildchart() {
       normalizedWeight: link.normalizedWeight
     };
   });
+  results.linksLookup = new Map();
 
   const svg = d3
     .select("svg")
@@ -138,7 +139,7 @@ function handleMouseOver(d, i) {
       .attr("dy", "1em")
       .text("Eigenfactor: " + cutAfter(value, 6));
   } else {
-    const inout = calcInOut(d, clicked);
+    const inout = getInOut(d, clicked);
     text
       .append("tspan")
       .classed("detail", true)
@@ -150,7 +151,7 @@ function handleMouseOver(d, i) {
       .classed("detail", true)
       .attr("x", 4)
       .attr("dx", "4.5em")
-      .text(cutAfter(inout[0], 6));
+      .text(cutAfter(inout.in, 6));
     text
       .append("tspan")
       .classed("detail", true)
@@ -162,7 +163,7 @@ function handleMouseOver(d, i) {
       .classed("detail", true)
       .attr("x", 4)
       .attr("dx", "4.5em")
-      .text(cutAfter(inout[1], 6));
+      .text(cutAfter(inout.out, 6));
   }
 
   const bbox = text.node().getBBox();
@@ -188,14 +189,47 @@ function calcInDepth3(source, target) {
   return v.length === 1 ? v[0] : 0;
 }
 
-function calcInOut(source, target) {
-  /* TODO: manage source / target, depth 2 and 3 */
-  const inout = [0, 0];
-  if (source.depth === 3 && target.depth === 3) {
-    inout[0] = calcInDepth3(source, target);
-    inout[1] = calcInDepth3(target, source);
+function getInOut(source, target) {
+  const lo = results.linksLookup;
+  const sId = source.data.id;
+  const tId = target.data.id;
+
+  if (!lo.has(sId)) lo.set(sId, new Map());
+
+  if (!lo.get(sId).has(tId)) {
+    if (lo.has(tId) && lo.get(tId).has(sId)) {
+      lo.get(sId).set(tId, {
+        in: lo.get(tId).get(sId).out,
+        out: lo.get(tId).get(sId).in
+      });
+    } else if (source.depth === 3 && target.depth === 3) {
+      lo.get(sId).set(tId, {
+        in: calcInDepth3(source, target),
+        out: calcInDepth3(target, source)
+      });
+    } else if (source.depth > target.depth) {
+      lo.get(sId).set(
+        tId,
+        target.children.reduce(
+          (a, c) => {
+            const inout = getInOut(source, c);
+            a.in += inout.in;
+            a.out += inout.out;
+            return a;
+          },
+          { in: 0, out: 0 }
+        )
+      );
+    } else {
+      const inout = getInOut(target, source);
+      lo.get(sId).set(tId, {
+        in: inout.out,
+        out: inout.in
+      });
+    }
   }
-  return inout;
+
+  return lo.get(sId).get(tId);
 }
 
 function handleMouseOut(d, i) {
