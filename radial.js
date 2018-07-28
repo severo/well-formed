@@ -294,14 +294,14 @@ function goToNormalState() {
 }
 
 function goToSelectedState(arc) {
-  selectArc(arc);
+  if (arc.depth === 3) selectInnerArc(arc);
+  else selectOuterArc(arc);
   clicked = arc;
 }
 
-function selectArc(arc) {
+function selectInnerArc(arc) {
   setTitle(arc.data.longLabel);
 
-  /* TODO: use the same function to select a category */
   const innerArcs = d3.selectAll("svg .innerArc");
   innerArcs.classed("clicked", d => d.data.id === arc.data.id);
 
@@ -399,6 +399,10 @@ function selectArc(arc) {
   );
 }
 
+function selectOuterArc(arc) {
+  setTitle(arc.data.label);
+}
+
 function setTitle(title) {
   const text = d3.select("svg .maintitle text");
   text.text(title);
@@ -436,7 +440,8 @@ function drawOuterArcs(g, data, radius) {
     .attr("d", outerArc(radius))
     .attr("fill", d => d.color)
     .on("mousemove", handleMouseOver)
-    .on("mouseout", handleMouseOut);
+    .on("mouseout", handleMouseOut)
+    .on("click", handleClick);
 }
 
 function drawLinks(g, linksData, maxLinks, colorFn) {
