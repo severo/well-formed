@@ -6,7 +6,7 @@ g#links path.link {
   fill: none;
   pointer-events: none;
 }
-g#labels text.label { fill: #888888; font-family: flamalightregular; font-size: 13px; }
+g#labels text.label { font-family: flamalightregular; font-size: 13px; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
 g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
@@ -227,11 +227,19 @@ function goToNormalState() {
   );
   drawLabels(
     g.append("g").attr("id", "labels"),
-    results.groupsData.filter(
-      group =>
-        group.data.parentEigenfactor > 0.005 &&
-        group.data.label !== "NO SUGGESTION"
-    ),
+    results.groupsData
+      .filter(
+        group =>
+          group.data.parentEigenfactor > 0.005 &&
+          group.data.label !== "NO SUGGESTION"
+      ) // show label if large enough, and there is in fact one
+      .map(d => {
+        return {
+          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          text: d.data.label,
+          fill: "#888888"
+        };
+      }),
     results.radius
   );
   drawLinks(
@@ -264,7 +272,7 @@ function selectArc(arc) {
       .filter(link => link.source === arc.data.id)
       .map(l => [l.target, l])
   );
-  const localWeights = new Map();
+  const localWeights = new Map([[arc.data.id, 1]]);
   sourceArcs.forEach((l, a) => localWeights.set(a, l.normalizedWeight));
   targetArcs.forEach((l, a) =>
     localWeights.set(
@@ -330,11 +338,22 @@ function selectArc(arc) {
       .select("g#radial")
       .append("g")
       .attr("id", "labels"),
-    results.leavesData.filter(d => {
-      return localWeights.has(d.data.id) || d.data.id === arc.data.id;
-    }),
+    results.leavesData
+      .filter(d => {
+        return localWeights.has(d.data.id) || d.data.id === arc.data.id;
+      })
+      .map(d => {
+        const brightness =
+          221 - Math.min(153, Math.floor(localWeights.get(d.data.id) * 153));
+        const fill = d3.rgb(brightness, brightness, brightness).toString();
+        return {
+          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          text: d.data.label,
+          fill: d.data.id === arc.data.id ? "#222222" : fill
+        };
+      }),
     results.radius
-  ); /* Add gray modulation for the labels */
+  );
 }
 
 function setTitle(title) {
@@ -412,14 +431,7 @@ function moveEdgePoints(path) {
   return path;
 }
 
-function drawLabels(g, data, radius) {
-  // show label if large enough, and there is in fact one
-  const labels = data.map(d => {
-    return {
-      angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
-      text: d.data.label
-    };
-  });
+function drawLabels(g, labels, radius) {
   return g
     .selectAll("text")
     .data(labels)
@@ -440,6 +452,7 @@ function drawLabels(g, data, radius) {
     .attr("text-anchor", function(d) {
       return d.angle < 180 ? "start" : "end";
     })
+    .attr("fill", d => d.fill)
     .text(function(d) {
       return d.text;
     });
