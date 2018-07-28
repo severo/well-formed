@@ -309,37 +309,38 @@ function selectInnerArc(arc) {
   const innerArcs = d3.selectAll("svg .innerArc");
   innerArcs.classed("clicked", d => d.data.id === arc.data.id);
 
-  const sourceArcs = new Map(
-    data.flowEdges
-      .filter(link => link.target === arc.data.id)
-      .map(l => [l.source, l])
-  );
-  const targetArcs = new Map(
-    data.flowEdges
-      .filter(link => link.source === arc.data.id)
-      .map(l => [l.target, l])
-  );
   const localWeights = new Map([[arc.data.id, 1]]);
-  sourceArcs.forEach((l, a) => localWeights.set(a, l.normalizedWeight));
-  targetArcs.forEach((l, a) =>
-    localWeights.set(
-      a,
-      localWeights.has(a) ? localWeights.get(a) : 0 + l.normalizedWeight
-    )
-  );
+  data.flowEdges
+    .filter(link => link.source === arc.data.id)
+    .forEach(l =>
+      localWeights.set(
+        l.target,
+        (localWeights.has(l.target) ? localWeights.get(l.target) : 0) +
+          l.normalizedWeight
+      )
+    );
+  data.flowEdges
+    .filter(link => link.target === arc.data.id)
+    .forEach(l =>
+      localWeights.set(
+        l.source,
+        (localWeights.has(l.source) ? localWeights.get(l.source) : 0) +
+          l.normalizedWeight
+      )
+    );
   innerArcs.classed(
     "unlinked",
     d => !localWeights.has(d.data.id) && d.data.id !== arc.data.id
   );
   innerArcs.filter(d => localWeights.has(d.data.id)).attr("fill", d => {
     return getColorByIndexAndWeight({
-      index: d.depth === 3 ? +d.parent.parent.id : +d.parent.id,
+      index: +d.parent.parent.id,
       weight: localWeights.get(d.data.id),
       MIN_SAT: 0.4,
       MAX_SAT: 0.95,
       MIN_BRIGHTNESS: 0.8,
       MAX_BRIGHTNESS: 0.5
-    }); /* TODO: fix the color - it's slightly clearer on the original */
+    });
   });
 
   /* Outer arcs */
@@ -354,13 +355,9 @@ function selectInnerArc(arc) {
       .select("g#all")
       .append("g")
       .attr("id", "links"),
-    results.linksData
-      .filter(
-        l =>
-          l.source.data.id === arc.data.id || l.target.data.id === arc.data.id
-      )
-      .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
-      .slice(0, results.maxLinks),
+    results.linksData.filter(
+      l => l.source.data.id === arc.data.id || l.target.data.id === arc.data.id
+    ),
     link => {
       const color = d3.rgb(
         getColorByIndexAndWeight({
@@ -405,6 +402,41 @@ function selectInnerArc(arc) {
 
 function selectOuterArc(arc) {
   setTitle(arc.data.label);
+
+  const childrenIds = arc.children.map(e => e.data.id);
+
+  const innerArcs = d3.selectAll("g#innerArcs .innerArc");
+  const localWeights = new Map([[arc.data.id, 1]]);
+  data.flowEdges
+    .filter(link => childrenIds.includes(link.source))
+    .forEach(l =>
+      localWeights.set(
+        l.target,
+        (localWeights.has(l.target) ? localWeights.get(l.target) : 0) +
+          l.normalizedWeight
+      )
+    );
+  data.flowEdges
+    .filter(link => childrenIds.includes(link.target))
+    .forEach(l =>
+      localWeights.set(
+        l.source,
+        (localWeights.has(l.source) ? localWeights.get(l.source) : 0) +
+          l.normalizedWeight
+      )
+    );
+  innerArcs.classed("unlinked", d => !localWeights.has(d.data.id));
+  innerArcs.filter(d => localWeights.has(d.data.id)).attr("fill", d => {
+    return getColorByIndexAndWeight({
+      index: +d.parent.parent.id,
+      weight: localWeights.get(d.data.id),
+      MIN_SAT: 0.4,
+      MAX_SAT: 0.95,
+      MIN_BRIGHTNESS: 0.8,
+      MAX_BRIGHTNESS: 0.5
+    });
+  });
+
   // Outer arcs
   d3.select("g#outerArcs")
     .selectAll(".outerArc")
@@ -413,20 +445,16 @@ function selectOuterArc(arc) {
 
   // Links
   const links = d3.select("g#links").remove();
-  const childrenIds = arc.children.map(e => e.data.id);
   drawLinks(
     d3
       .select("g#all")
       .append("g")
       .attr("id", "links"),
-    results.linksData
-      .filter(
-        l =>
-          childrenIds.includes(l.source.data.id) ||
-          childrenIds.includes(l.target.data.id)
-      )
-      .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
-      .slice(0, results.maxLinks),
+    results.linksData.filter(
+      l =>
+        childrenIds.includes(l.source.data.id) ||
+        childrenIds.includes(l.target.data.id)
+    ),
     link => {
       const color = d3.rgb(
         getColorByIndexAndWeight({
