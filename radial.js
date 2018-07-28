@@ -1,7 +1,7 @@
 const svgcssradial = `
 g#links path.link { fill: none; pointer-events: none; }
 g#links path.link.colour { mix-blend-mode: multiply }
-g#labels text.label { font-family: flamalightregular; font-size: 13px; mix-blend-mode: darken; }
+g#labels text.label { font-family: flamalightregular; font-size: 10px; mix-blend-mode: darken; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
 g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
