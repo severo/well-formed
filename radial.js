@@ -75,6 +75,14 @@ function buildchart() {
     .append("g")
     .attr("transform", `translate(0, ${config.titleHeight})`);
 
+  svg
+    .append("rect")
+    .attr("y", -config.titleHeight)
+    .attr("width", width)
+    .attr("height", height + config.titleHeight)
+    .attr("fill", "#f0f0f0")
+    .on("click", goToNormalState);
+
   const graph = svg
     .append("g")
     .attr("id", "radial")
