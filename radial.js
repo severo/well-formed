@@ -18,7 +18,7 @@ config.titleHeight = 35;
  * Build the chart
  */
 function buildchart() {
-  results.radius = Math.min(width, height) / 2 - 50;
+  results.radius = Math.min(width, height - config.titleHeight) / 2 - 120;
   const initialAngle = Math.PI / 5; /* TODO: understand why */
   results.maxLinks = 1000;
 
@@ -81,7 +81,7 @@ function buildchart() {
   const graph = svg
     .append("g")
     .attr("id", "radial")
-    .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
+    .attr("transform", `translate(${[width / 2, height / 2]})`);
   graph.append("g").attr("id", "all");
   graph.append("g").attr("id", "tooltip");
 
