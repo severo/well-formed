@@ -1,8 +1,8 @@
 const svgcssradial = `
 .link {
-  stroke: #333;
-  stroke-opacity: 0.2;
-  stroke-width: 0.2;
+  /*stroke: #333;*/
+  /*stroke-opacity: 0.2;*/
+  /*stroke-width: 0.2;*/
   fill: none;
   pointer-events: none;
 }
@@ -19,12 +19,37 @@ config.titleHeight = 35;
  */
 function buildchart() {
   const radius = Math.min(width, height) / 2 - 40;
-  results.radialData = centerChildNodes(radial(data.tree, radius + 10));
-  results.innerData = centerChildNodes(hierarchy(data.tree));
-  results.leavesLookup = new Map();
-  results.radialData
-    .leaves()
-    .forEach(d => (results.leavesLookup[d.data.id] = d));
+  const initialAngle = Math.PI / 5; /* TODO: understand why */
+
+  results.radialData = centerChildNodes(
+    stratifyTree(data.tree).sum(d => d.eigenfactor)
+  );
+  results.radialData = addAngleAndRadius(
+    results.radialData,
+    radius - 10,
+    initialAngle,
+    results.radialData.value
+  );
+  results.radialData = results.radialData.each(addNodeColor);
+
+  const leavesData = results.radialData.leaves();
+  const groupsData = results.radialData
+    .descendants()
+    .filter(d => d.depth == 2)
+    .map(d => ((d.yy = (3 / 2) * d.y), d));
+
+  const radialDataLookup = results.radialData.descendants().reduce((a, c) => {
+    a[c.data.id] = c;
+    return a;
+  }, {});
+  const linksData = data.flowEdges.map(link => {
+    return {
+      source: radialDataLookup[link.source],
+      target: radialDataLookup[link.target],
+      weight: link.weight,
+      normalizedWeight: link.normalizedWeight
+    };
+  });
 
   const svg = d3
     .select("svg")
@@ -34,34 +59,174 @@ function buildchart() {
       `
       <defs>
       <style type="text/css">${svgcss()}${svgcssradial}</style>
-        </defs>
-        `
+      <filter id="drop-shadow">
+      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.5">
+      </feDropShadow>
+      </filter>
+      </defs>
+      `
     )
     .append("g")
     .attr("transform", `translate(0, ${config.titleHeight})`);
 
   const graph = svg
     .append("g")
+    .attr("id", "radial")
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
 
   const link = graph.append("g").selectAll(".link"),
     node = graph.append("g").selectAll(".node");
 
-  const leavesData = results.radialData.leaves();
-  const groupsData = results.radialData
-    .descendants()
-    .filter(d => d.depth == 2)
-    .map(d => ((d.yy = (3 / 2) * d.y), d));
-  const outerArcsData = createInnerArcsData(groupsData);
-  const innerArcsData = createInnerArcsData(results.radialData.leaves());
+  const title = svg
+    .append("g")
+    .classed("maintitle", true)
+    .attr("transform", `translate(${[0, -config.titleHeight]})`);
+  title.append("rect").attr("height", config.titleHeight);
+  title
+    .append("text")
+    .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
 
-  drawOuterArcs(graph.append("g"), outerArcsData, radius);
-  drawInnerArcs(graph.append("g"), innerArcsData, radius);
-  //drawCategories(node)
-  drawLabels(node, outerArcsData, radius);
-  drawLinks(link, leavesData);
+  drawOuterArcs(graph.append("g"), groupsData, radius);
+  drawInnerArcs(graph.append("g"), leavesData, radius);
+  drawLabels(node, groupsData, radius);
+  drawLinks(link, linksData, 1000);
 
   return svg.node();
+}
+
+/*
+ * Interaction functions
+ */
+
+function handleMouseOver(d, i) {
+  const svg = d3.select("g#radial");
+  const cursor = d3.mouse(this);
+
+  // Ugly, will fix later
+  const label = "longLabel" in d.data ? d.data.longLabel : d.data.label;
+  const value =
+    "eigenfactor" in d.data ? d.data.eigenfactor : d.data.parentEigenfactor;
+
+  d3.selectAll(".tooltip").remove();
+
+  const g = svg
+    .append("g")
+    .classed("tooltip", true)
+    .attr("id", "t-" + i);
+
+  const rect = g
+    .append("rect")
+    .classed("background", true)
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("filter", "url(#drop-shadow)");
+
+  const text = g
+    .append("text")
+    .classed("text", true)
+    .attr("x", 0)
+    .attr("y", 0);
+
+  const tspan1 = text
+    .append("tspan")
+    .classed("title", true)
+    .attr("x", 4)
+    .attr("dy", "1em")
+    .text(label);
+
+  if (clicked === -1 || clicked.data.id === d.data.id) {
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dy", "1em")
+      .text("Eigenfactor: " + cutAfter(value, 6));
+  } else {
+    const inArray = data.flowEdges.filter(
+      e => e.source === d.data.id && e.target === clicked.data.id
+    );
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dy", "1em")
+      .text("IN:");
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dx", "4.5em")
+      .text(
+        cutAfter(inArray.length === 1 ? inArray[0].normalizedWeight : 0, 6)
+      );
+    const outArray = data.flowEdges.filter(
+      e => e.source === clicked.data.id && e.target === d.data.id
+    );
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dy", "1em")
+      .text("OUT:");
+    text
+      .append("tspan")
+      .classed("detail", true)
+      .attr("x", 4)
+      .attr("dx", "4.5em")
+      .text(
+        cutAfter(outArray.length === 1 ? outArray[0].normalizedWeight : 0, 6)
+      );
+  }
+
+  const bbox = text.node().getBBox();
+  rect.attr("width", bbox.width + 8).attr("height", bbox.height);
+
+  /* Manage the bottom and right edges */
+  const x =
+    cursor[0] -
+    (cursor[0] + bbox.width + 8 + 2 > width / 2 ? bbox.width + 8 : 0);
+  const y =
+    cursor[1] +
+    (d.data.y + cursor[1] + bbox.height + 26 + 2 > height - config.titleHeight
+      ? -bbox.height - 6
+      : 26);
+
+  g.attr("transform", `translate(${x},${y})`);
+}
+
+function handleMouseOut(d, i) {
+  d3.select("#t-" + i).remove();
+}
+
+function handleClick(arc, i) {
+  /* TODO: Be more consistent and careful with the state management.
+   * Maybe use an array, or a null node placeholder */
+  if (clicked !== -1 && arc.data.id === clicked.data.id) {
+    goToNormalState();
+  } else {
+    goToSelectedState(arc);
+  }
+}
+
+function goToNormalState() {
+  clicked = -1;
+  setTitle("");
+}
+
+function goToSelectedState(arc) {
+  selectArc(arc);
+  clicked = arc;
+}
+
+function selectArc(arc) {
+  setTitle(arc.data.longLabel);
+}
+
+function setTitle(title) {
+  const text = d3.select("svg .maintitle text");
+  text.text(title);
+  const w = text.node().getBBox().width;
+  d3.select("svg .maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
 }
 
 /*
@@ -69,49 +234,73 @@ function buildchart() {
  */
 
 function drawInnerArcs(node, data, radius) {
-  const arc = innerArc(radius);
   return node
     .selectAll(".innerArc")
     .data(data)
     .enter()
     .append("path")
     .classed("innerArc", true)
-    .attr("d", d => arc(d))
-    .attr("fill", d => d.color);
+    .attr("d", innerArc(radius))
+    .attr("fill", d => d.color)
+    .on("mousemove", handleMouseOver)
+    .on("mouseout", handleMouseOut)
+    .on("click", handleClick);
 }
 
 function drawOuterArcs(node, data, radius) {
-  const arc = outerArc(radius);
   return node
     .selectAll(".outerArc")
     .data(data)
     .enter()
     .append("path")
     .classed("outerArc", true)
-    .attr("d", d => arc(d))
+    .attr("d", outerArc(radius))
     .attr("fill", d => d.color)
-    .on("click", d => console.log(d.data.data.label));
-}
-function drawLinks(link, leaves) {
-  return link
-    .data(packageImports(leaves)) // todo: links
-    .enter()
-    .append("path")
-    .each(function(d) {
-      (d.source = d[0]), (d.target = d[d.length - 1]);
-    })
-    .attr("class", "link")
-    .attr("d", line);
+    .on("mousemove", handleMouseOver)
+    .on("mouseout", handleMouseOut);
 }
 
-function drawLabels(node, leaves, radius) {
-  console.log(leaves);
+function drawLinks(link, linksData, maxLinks) {
+  return link
+    .data(
+      linksData
+        .sort((a, b) => b.normalizedWeight > a.normalizedWeight)
+        .slice(0, maxLinks === undefined ? linksData.length : maxLinks)
+    )
+    .enter()
+    .append("path")
+    .attr("class", "link")
+    .attr("d", link => {
+      const path = moveEdgePoints(link.source.path(link.target));
+      return line(path);
+    })
+    .attr("stroke-width", d => (1 + 5 * d.normalizedWeight) / 2)
+    .attr("stroke", d => getGreyLinkColor(d));
+}
+
+function moveEdgePoints(path) {
+  const source = path[0];
+  const target = path[path.length - 1];
+  let delta = ((source.centerAngle - target.centerAngle) / (2 * Math.PI)) % 1;
+  if (delta < 0) delta += 1;
+  path[0] = {
+    radius: source.radius,
+    centerAngle: source.centerAngle + source.angleWidth * (delta - 0.5)
+  };
+  path[path.length - 1] = {
+    radius: target.radius,
+    centerAngle: target.centerAngle + target.angleWidth * (0.5 - delta)
+  };
+  return path;
+}
+
+function drawLabels(g, nodes, radius) {
   // show label if large enough, and there is in fact one
-  leaves = leaves
+  nodes = nodes
     .filter(
       node =>
-        node.data.data.parentEigenfactor > 0.005 &&
-        node.data.data.label !== "NO SUGGESTION"
+        node.data.parentEigenfactor > 0.005 &&
+        node.data.label !== "NO SUGGESTION"
     )
     .map(
       d => (
@@ -119,8 +308,8 @@ function drawLabels(node, leaves, radius) {
         d
       )
     );
-  return node
-    .data(leaves)
+  return g
+    .data(nodes)
     .enter()
     .append("text")
     .attr("class", "node")
@@ -130,7 +319,7 @@ function drawLabels(node, leaves, radius) {
         "rotate(" +
         (d.angle - 90) +
         ")translate(" +
-        (d.data.yy + 8) +
+        (radius + 20) +
         ",0)" +
         (d.angle < 180 ? "" : "rotate(180)")
       );
@@ -139,11 +328,11 @@ function drawLabels(node, leaves, radius) {
       return d.angle < 180 ? "start" : "end";
     })
     .text(function(d) {
-      return d.data.data.label;
+      return d.data.label;
     });
 }
 
-/* Graphical functions for small elements */
+/* Graphical functions for basic elements */
 
 function innerArc(radius) {
   return d3
@@ -153,18 +342,17 @@ function innerArc(radius) {
 }
 
 function outerArc(radius) {
-  return innerArc(radius + 11);
+  return d3
+    .arc()
+    .outerRadius(radius + 11)
+    .innerRadius(radius + 1);
 }
 
 const line = d3
   .radialLine()
-  .curve(d3.curveBundle.beta(0.85))
-  .radius(function(d) {
-    return d.y;
-  })
-  .angle(function(d) {
-    return (d.x / 180) * Math.PI;
-  });
+  .curve(d3.curveBundle.beta(0.8))
+  .radius(d => d.radius)
+  .angle(d => d.centerAngle);
 
 /*
  * DATA
@@ -173,33 +361,49 @@ const line = d3
  * https://bl.ocks.org/mbostock/7607999
  *
  */
-function createInnerArcsData(leavesData) {
-  return calcInnerArcsAngles(
-    leavesData.map((l, i) => {
-      return {
-        data: l,
-        value: l.value,
-        padAngle: 0,
-        index: i,
-        startAngle: 0,
-        endAngle: 0,
-        color: getColor(l)
-      };
-    })
-  );
+function addAngleAndRadius(node, radius, startAngle, maxValue) {
+  /* Add angles and radius to current node */
+  node.angleWidth = (node.value / maxValue) * Math.PI;
+  node.padAngle = node.angleWidth > 0.003 ? 0.0015 : node.angleWidth;
+  node.startAngle = startAngle;
+  node.endAngle = startAngle + 2 * node.angleWidth;
+  node.centerAngle = (node.endAngle + node.startAngle) / 2;
+  node.radius = (radius * node.depth) / (node.depth + node.height);
+
+  /* Descend in the tree */
+  if ("children" in node) {
+    node.children = node.children.map((n, i) =>
+      addAngleAndRadius(
+        n,
+        radius,
+        i === 0 ? startAngle : node.children[i - 1].endAngle,
+        maxValue
+      )
+    );
+  }
+
+  return node;
 }
 
-function getColor(leaf) {
-  let color = getColorByIndexAndWeight({
-    index: leaf.depth === 3 ? +leaf.parent.parent.id : +leaf.parent.id,
-    weight: leaf.depth === 3 ? leaf.data.weight : leaf.value,
+function addNodeColor(node) {
+  if (node.depth === 0) return node;
+  node.color = getColorByIndexAndWeight({
+    index: node.depth === 3 ? +node.parent.parent.id : +node.parent.id,
+    weight: node.depth === 3 ? node.data.weight : node.value,
     MIN_SAT: 0.4,
     MAX_SAT: 0.95,
     MIN_BRIGHTNESS: 0.8,
     MAX_BRIGHTNESS: 0.5
   });
-  if (leaf.depth === 2) color = fadeColor(color);
-  return color;
+  if (node.depth === 2) node.color = fadeColor(node.color);
+
+  return node;
+}
+
+function getGreyLinkColor(link) {
+  const brightness = 56 - Math.floor(56 * Math.sqrt(link.normalizedWeight));
+  const alpha = Math.sqrt(link.normalizedWeight) * 0.3 + 0.02;
+  return d3.rgb(brightness, brightness, brightness, alpha).toString();
 }
 
 function fadeColor(color) {
@@ -207,78 +411,10 @@ function fadeColor(color) {
   return d3.hsv(hsvColor.h, 0.2, 0.8);
 }
 
-function calcInnerArcsAngles(arcs) {
-  const calcArcs = arcs.reduce(
-    (a, c) => {
-      c.startAngle = a.sumValues + a.shiftValue;
-      a.sumValues += c.value;
-      c.endAngle = a.sumValues + a.shiftValue;
-      a.arcs.push(c);
-      return a;
-    },
-    {
-      arcs: [],
-      sumValues: 0,
-      shiftValue: 0.03 // Fix this - I'm missing something
-    }
-  );
-  return calcArcs.arcs.map(c => {
-    c.startAngle = (2 * Math.PI * c.startAngle) / calcArcs.sumValues;
-    c.endAngle = (2 * Math.PI * c.endAngle) / calcArcs.sumValues;
-    c.padAngle =
-      c.endAngle - c.startAngle > 0.006
-        ? 0.0015
-        : (c.endAngle - c.startAngle) / 2;
-    return c;
-  });
-}
-
-function hierarchy(tree) {
-  return d3
-    .stratify()
-    .id(function(d) {
-      return d.path;
-    })
-    .parentId(function(d) {
-      return d.parentPath;
-    })(tree);
-}
-
-function radial(data, innerRadius) {
-  /*const diameter = 960,
-    radius = diameter / 2,
-    innerRadius = radius - 120;*/
-
-  const cluster = d3.cluster().size([360, innerRadius]),
-    hier = hierarchy(data).sum(d => d.eigenfactor);
-  //.sort((a, b) => b.value - a.value);
-  cluster(hier);
-
-  return hier;
-}
-
-// Return a list of imports for the given array of nodes.
-function packageImports(nodes) {
-  var map = {},
-    imports = [];
-
-  // Compute a map from name to node.
-  nodes.forEach(function(d) {
-    map[d.data.path] = d;
-  });
-
-  // For each import, construct a link from the source to target node.
-  nodes.forEach(function(d) {
-    if (d.data.path)
-      nodes
-        .slice(0, 2) // todo: select the right nodes :-)
-        .map(d => d.data.path)
-        .forEach(function(i) {
-          imports.push(map[d.data.path].path(map[i]));
-        });
-  });
-  return imports;
-}
+const stratifyTree = d3
+  .stratify()
+  .id(d => d.path)
+  .parentId(d => d.parentPath);
 
 function centerChildNodes(nodes) {
   nodes.each(node => {

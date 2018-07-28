@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="utf-8">
+  <link rel="stylesheet" type="text/css" href="common.css">
+  <style type="text/css">
+
+  	.container{
+  		display: grid;
+  		grid-template-columns: 75vw 25vw;
+  		grid-template-rows: 100vh;
+  		grid-template-areas: "vis sidebar"
+  	}
+
+  	h1{
+  		margin: 0 0 1em;
+  		padding: 0;
+
+      text-transform: uppercase;
+  		font-size: 1.5em;
+      letter-spacing: .08em;
+  	}
+
+    a{
+      color: inherit;
+      text-decoration: none;
+    }
+
+  	.vis{
+  		grid-area: vis;
+  	}
+
+  	.sidebar{
+  		grid-area: sidebar;
+  		padding: 1em;
+      position: relative;
+      background: #FFF;
+  	}
+
+  	iframe{
+  		display: block;
+  		width: 100%;
+  		height: 100%;
+  		border: none;
+  	}
+
+  	.menu{
+  		display: grid;
+  		grid-template-columns: 1fr 1fr;
+  		grid-template-rows: auto auto;
+
+  		grid-gap: .5em;
+  		margin: 0;
+  		padding: 0;
+  	}
+
+  	.menu li{
+  		list-style: none;
+  		display: block;
+  		margin: 0;
+  		padding: 0;
+  		/*border: 1px solid red;*/
+  	}
+
+  	.menu li img{
+  		display: block;
+  		width: 100%;
+  		height: auto;
+  	}
+
+  	.menu li span{
+  		display: block;
+  		width: 100%;
+  		height: auto;
+      padding: .3em 0 1em 0;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-size: .8em;
+  	}
+
+    .credits {
+      color: #777;
+      position: absolute;
+      bottom: 0;
+      padding: 0 1em 1em 0;
+      font-size: .8em;
+    }
+
+    .active{
+      font-weight: bold;
+    }
+
+    .annotation p {
+      display: none;
+    }
+
+  </style>
+  <script type="text/javascript">
+    function menuChange(){
+      console.log(location.hash);
+
+      var selectedItem = location.hash.split("#").pop();
+      var allAnchors = document.querySelectorAll(".menu a");
+      var matchedAnchors = document.querySelectorAll(".menu a[href='"+location.hash+"']");
+
+      if(!matchedAnchors.length) {
+        // empty or invalid hash - take first anchor
+        location.hash = allAnchors[0].href.split("#").pop();
+        return;
+      }
+
+      allAnchors.forEach(function(item) {
+        item.classList.remove("active");
+      });
+
+      document.querySelectorAll(".menu a[href='#" + selectedItem + "']")[0].classList.add("active");
+      document.getElementById("visframe").src= selectedItem + ".html#nofullscreen";
+
+      document.querySelectorAll(".annotation p").forEach(function(item) {
+        if(item.getAttribute("data-for") === selectedItem){
+          item.style.display = "block";
+        } else {
+          item.style.display = "none";
+        }
+      });
+    }
+
+    window.onhashchange = menuChange;
+    window.onload = menuChange;
+  </script>
+</head>
+
+<body>
+  <div class="container">
+  	<div class="vis">
+  		<iframe src="map.html#nofullscreen" id="visframe" name="visframe"></iframe>
+  	</div>
+
+  	<div class="sidebar">
+  		<h1>well-formed&thinsp;.&thinsp;eigenfactor</h1>
+
+  		<ul class="menu">
+
+  			<li>
+  				<a href="#radial">
+  					<img src="img/radial2.gif" />
+  					<span>Radial flow</span>
+  				</a>
+  			</li>
+
+  			<li>
+  				<a href="#sankey">
+  					<img src="img/flow2.jpg" />
+  					<span>Fields over time</span>
+  				</a>
+  			</li>
+
+  			<li>
+
+  				<a href="#treemap">
+  					<img src="img/treemap2.gif" />
+  					<span>Field hierarchy</span>
+  				</a>
+  			</li>
+
+        <li>
+          <a href="#map">
+            <img src="img/map2.gif"/>
+            <span>Network map</span>
+          </a>
+        </li>
+
+  		</ul>
+      <div class="annotation">
+  		  <p data-for="radial">This visualization gives an overview of the whole citation network. The colors represent the four main groups of journals, which are further subdivided into fields in the outer ring. The segments of the inner ring represent the individual journals, scaled by Eigenfactor® Score.<br/><br/>In the initial view, the top 1000 citation links are plotted. Line size and opacity represents connection strength. The Bezier curves follow the hierarchical cluster structure, using the hierarchical edge bundling technique (pdf). Selecting a single journal (inner ring) or whole field (outer ring) displays all citation flow coming in or out of the selection. The color is based on the cluster color of the origin node. </p>
+        <p data-for="sankey">Inspired by Sankey diagrams and stacked bar charts, this diagram displays changes in Eigenfactor® Score and clustering over time. The columns corresponds to the years 1997, 1999, 2001, 2003 and 2005. In each year, the journals are grouped vertically according to their cluster structure; within a cluster, they are ordered by their Eigenfactor® Score. Bars belonging to the same journal are connected. Clicking highlights both the selected journal over the years, and all clusters it has been part of. This allows to track both changes in journal influence as well as changes in cluster structure. </p>
+        <p data-for="treemap">This visualization displays a hierarchical clustering of journals in the form of a treemap. The size of a journal marker corresponds to its Eigenfactor® Score. Click one of the rectangles in order to see the amount of citation flow from other journals. The black arrow indicates outgoing citation flow (from the selected journal), the white one incoming citations. The arrow size indicates the amount of citation flow. </p>
+        <p data-for="map">This map visualization puts journals, which frequently cite each other, closer together. You can drag the white magnification lens around to enlarge a part of the map for closer inspection. Clicking one of the nodes will highlight all its connections. If a journal is selected, the node sizes represent the relative amount of citation flow (incoming and outgoing) with respect to the selection; otherwise, they are scaled by their Eigenfactor® Score.</p>
+      </div>
+
+  		<div class="credits">
+  			Moritz Stefaner with Martin Rosvall, Jevin West and Carl Bergstrom at the Bergstrom Lab, University of Washington.<br/> Code update 2018 by Sylvain Lesage and Philippe Rivière.
+  		</div>
+
+  	</div>
+  </div>
+
+</body>
+
+</html>
