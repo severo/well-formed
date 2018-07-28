@@ -489,6 +489,24 @@ function selectOuterArc(arc) {
     }),
     results.radius
   );
+  drawLabels(
+    g,
+    results.leavesData
+      .filter(d => {
+        return localWeights.has(d.data.id) && d.parent.data.id !== arc.data.id;
+      })
+      .map(d => {
+        const brightness =
+          221 - Math.min(153, Math.floor(localWeights.get(d.data.id) * 153));
+        const fill = d3.rgb(brightness, brightness, brightness).toString();
+        return {
+          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          text: d.data.label,
+          fill: fill
+        };
+      }),
+    results.radius
+  );
 }
 
 function setTitle(title) {
