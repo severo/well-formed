@@ -116,7 +116,7 @@
       });
 
       document.querySelectorAll(".menu a[href='#" + selectedItem + "']")[0].classList.add("active");
-      document.getElementById("visframe").src= selectedItem + ".html#nofullscreen";
+      document.getElementById("visframe").src= selectedItem + "_vis.html#nofullscreen";
 
       document.querySelectorAll(".annotation p").forEach(function(item) {
         if(item.getAttribute("data-for") === selectedItem){
@@ -135,7 +135,7 @@
 <body>
   <div class="container">
   	<div class="vis">
-  		<iframe src="map.html#nofullscreen" id="visframe" name="visframe"></iframe>
+  		<iframe id="visframe" name="visframe"></iframe>
   	</div>
 
   	<div class="sidebar">
