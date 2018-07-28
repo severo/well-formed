@@ -209,7 +209,7 @@ function getInOut(source, target) {
         in: calcInDepth3(source, target),
         out: calcInDepth3(target, source)
       });
-    } else if (source.depth > target.depth) {
+    } else if ("children" in target) {
       lo.get(sId).set(
         tId,
         target.children.reduce(
