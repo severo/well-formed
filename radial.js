@@ -471,6 +471,24 @@ function selectOuterArc(arc) {
       return color.darker();
     }
   );
+
+  // Labels
+  d3.select("g#labels").remove();
+  const g = d3
+    .select("g#all")
+    .append("g")
+    .attr("id", "labels");
+  drawLabels(
+    g,
+    results.groupsData.filter(d => d.data.id === arc.data.id).map(d => {
+      return {
+        angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+        text: d.data.label,
+        fill: "#222222"
+      };
+    }),
+    results.radius
+  );
 }
 
 function setTitle(title) {
