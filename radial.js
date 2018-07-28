@@ -338,6 +338,11 @@ function selectArc(arc) {
     }); /* TODO: fix the color - it's slightly clearer on the original */
   });
 
+  /* Outer arcs */
+  d3.select("g#outerArcs")
+    .selectAll(".outerArc")
+    .classed("unlinked", true);
+
   /* Links */
   const links = d3.select("g#links").remove();
   drawLinks(
@@ -368,11 +373,6 @@ function selectArc(arc) {
       return color.darker();
     }
   );
-
-  /* Outer arcs */
-  d3.select("g#outerArcs")
-    .selectAll(".outerArc")
-    .classed("unlinked", true);
 
   /* Labels */
   d3.select("g#labels").remove();
