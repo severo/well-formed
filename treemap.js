@@ -47,6 +47,13 @@ function buildchart() {
     .append("g")
     .attr("transform", `translate(0, ${config.titleHeight})`);
 
+  svg
+    .append("rect")
+    .attr("y", -config.titleHeight)
+    .attr("width", width)
+    .attr("height", height + config.titleHeight)
+    .attr("fill", "#f0f0f0");
+
   function handleMouseOver(d, i) {
     const cursor = d3.mouse(this);
     d3.selectAll(".tooltip").remove();
@@ -166,14 +173,6 @@ function buildchart() {
     .attr("width", d => d.x1 - d.x0)
     .attr("height", d => d.y1 - d.y0);
 
-  /* I don't see why we should use this (comes from Treemap observable notebook
-  leaf
-    .append("clipPath")
-    .attr("id", d => (d.clipUid = DOM.uid("clip")).id)
-    .append("use")
-    .attr("xlink:href", d => d.leafUid.href);
-    */
-
   leaf
     .append("rect")
     .classed("title", true)
@@ -205,6 +204,7 @@ function buildchart() {
 function add_interaction(chart) {
   const svg = d3.select(chart);
   const journals = svg.selectAll("g.journal").on("click", click);
+  svg.on("click", click);
 
   const inout = d3
     .select(chart)
@@ -249,7 +249,8 @@ function add_interaction(chart) {
 }
 
 function click(d) {
-  if (d.data.id === clicked) {
+  d3.event.stopPropagation();
+  if (d === undefined || d.data.id === clicked) {
     clicked = -1;
   } else {
     clicked = d.data.id;

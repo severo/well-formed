@@ -229,8 +229,7 @@ function updatePositions(transition) {
   lens.radius = 50; //Math.sqrt(2.5 * width); // responsive, =50 in the original
 
   const scaledRadius = lens.radius * lens.scale;
-  d3
-    .select("svg #lens")
+  d3.select("svg #lens")
     .attr("r", scaledRadius)
     .attr("transform", `translate(${[lens.x, lens.y]})`);
 
@@ -270,8 +269,7 @@ function updatePositions(transition) {
     return `translate(${pos})`;
   });
 
-  d3
-    .select("#inout")
+  d3.select("#inout")
     .selectAll("path")
     .attr(
       "d",
@@ -310,7 +308,8 @@ function add_interaction(chart) {
   svg.on("touch mousedown", zoomSlightly).call(drag);
 
   /* click on a journal */
-  svg.selectAll("g.journal circle").on("click", click);
+  svg.selectAll(".journal circle").on("click", click);
+  svg.on("click", click);
 
   const inout = d3
     .select(chart)
@@ -330,7 +329,8 @@ function add_interaction(chart) {
 }
 
 function click(d) {
-  if (d.id === clicked) {
+  d3.event.stopPropagation();
+  if (d === undefined || d.id === clicked) {
     clicked = -1;
   } else {
     clicked = d.id;
@@ -349,8 +349,7 @@ function inout() {
   d3.selectAll(".journal").classed("clicked", d => d.id === clicked);
 
   if (clicked === -1) {
-    d3
-      .select("#inout")
+    d3.select("#inout")
       .transition()
       .style("opacity", 0);
     setTitle("");
@@ -362,19 +361,15 @@ function inout() {
 
   const links_out = data.flowEdges.filter(d => d.target === clicked);
 
-  d3
-    .select("#inout")
+  d3.select("#inout")
     .transition()
     .style("opacity", 1);
 
-  d3
-    .selectAll(".journal")
-    .classed(
-      "gray",
-      d =>
-        d.id !== clicked &&
-        links_out.filter(e => e.source === d.id).length === 0
-    );
+  d3.selectAll(".journal").classed(
+    "gray",
+    d =>
+      d.id !== clicked && links_out.filter(e => e.source === d.id).length === 0
+  );
 
   let links = d3
     .select("#inout")
