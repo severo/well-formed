@@ -115,8 +115,8 @@ function buildchart() {
     /* Manage the bottom and right edges */
     let x = cursor[0];
     let y = cursor[1] + 26;
-    if (x + bbox.width + 8 + 2 > w) x = x - bbox.width - 8;
-    if (y + bbox.height + 26 + 2 > h) y = y - bbox.height - 6 - 26;
+    if (x + bbox.width + 8 + 2 > w) x = x - bbox.width - 10;
+    if (y + bbox.height + 26 + 2 > h) y = y - bbox.height - 10 - 26;
     tooltip.attr("transform", `translate(${x},${y})`);
   }
 
