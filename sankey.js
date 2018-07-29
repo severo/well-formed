@@ -38,86 +38,42 @@ function buildchart() {
         ${svgshadowfilter()}
       </defs>
       `
-    )
-    .append("g")
-    .attr("transform", `translate(0, ${config.titleHeight})`);
+    );
 
-  /* Background rectangle to capture clicks. Maybe there is a better solution */
   svg
     .append("rect")
-    .classed("background", true)
+    .attr("id", "main")
     .attr("width", "100%")
     .attr("height", "100%")
+    .attr("fill", "#f0f0f0")
     .attr("fill-opacity", 0)
-    .data([{ class: "background" }])
     .on("click", goToNormalState);
 
+  const vis = svg
+    .append("g")
+    .attr("id", "vis")
+    .attr("transform", `translate(0, ${config.titleHeight})`);
+
+  svg.append("g").attr("id", "maintitle");
+
+  svg.append("g").attr("id", "tooltip");
+
   function handleMouseOver(d, i) {
-    const cursor = d3.mouse(this);
-    d3.selectAll(".tooltip").remove();
-
-    const g = svg
-      .append("g")
-      .classed("tooltip", true)
-      .attr("id", "t-" + i);
-
-    const rect = g
-      .append("rect")
-      .classed("background", true)
-      .attr("x", 0)
-      .attr("y", 0)
-      .style("filter", "url(#drop-shadow)");
-
-    const text = g
-      .append("text")
-      .classed("text", true)
-      .attr("x", 0)
-      .attr("y", 0);
-
-    const tspan1 = text
-      .append("tspan")
-      .classed("title", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text(d.longLabel);
-
-    text
-      .append("tspan")
-      .classed("detail", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text("Eigenfactor in " + d.year + ": " + cutAfter(d.eigenfactor, 6));
-
-    const bbox = text.node().getBBox();
-    const svgBbox = d3
-      .select("svg.sankey")
-      .node()
-      .getBBox();
-    rect.attr("width", bbox.width + 8).attr("height", bbox.height);
-
-    /* Manage the bottom and right edges */
-    const x =
-      d.x0 +
-      cursor[0] -
-      (d.x0 + cursor[0] + bbox.width + 8 + 2 > svgBbox.width
-        ? bbox.width + 8
-        : 0);
-    const y =
-      d.y0 +
-      cursor[1] +
-      (d.y0 + cursor[1] + bbox.height + 26 + 2 >
-      svgBbox.height - config.titleHeight
-        ? -bbox.height - 6
-        : 26);
-
-    g.attr("transform", `translate(${x},${y})`);
+    tooltip(
+      "t-" + i,
+      width,
+      height,
+      d.longLabel,
+      "Eigenfactor in " + d.year + ": " + cutAfter(d.eigenfactor, 6)
+    );
   }
 
   function handleMouseOut(d, i) {
     d3.select("#t-" + i).remove();
   }
 
-  const labels = svg
+  const labels = d3
+    .select("g#vis")
     .selectAll("text")
     .data(results.yearTitles)
     .enter()
@@ -127,7 +83,8 @@ function buildchart() {
     .attr("y", d => d.y0)
     .text(d => d.text);
 
-  const journals = svg
+  const journals = d3
+    .select("g#vis")
     .append("g")
     .classed("journals", true)
     .selectAll("g")
@@ -208,10 +165,7 @@ function add_interaction(chart) {
   const svg = d3.select(chart);
   const journals = svg.selectAll("g.journal rect.node").on("click", click);
 
-  const title = svg
-    .append("g")
-    .classed("maintitle", true)
-    .attr("transform", `translate(${[0, -config.titleHeight]})`);
+  const title = d3.select("g#maintitle");
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
@@ -231,10 +185,10 @@ function click(node) {
 }
 
 function setTitle(title) {
-  const text = d3.select("svg .maintitle text");
+  const text = d3.select("svg #maintitle text");
   text.text(title);
   const w = text.node().getBBox().width;
-  d3.select("svg .maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
+  d3.select("svg #maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
 }
 
 function goToNormalState() {
