@@ -353,14 +353,14 @@ function tooltip(
   }
 
   appendTspan(text, "title", 5, "1em", title);
-  appendTspan(text, "detail", 5, "1em", text1);
+  appendTspan(text, "detail", 5, "1.2em", text1);
   appendTspan(text, "detail", "4.5em", 0, value1);
   appendTspan(text, "detail", 5, "1em", text2);
   appendTspan(text, "detail", "4.5em", 0, value2);
 
   /* Position */
   const bbox = text.node().getBBox();
-  rect.attr("width", bbox.width + 10).attr("height", bbox.height + 2);
+  rect.attr("width", bbox.width + 10).attr("height", bbox.height + 11).attr("y", -4);
 
   /* Manage the bottom and right edges */
   let x = cursor[0];
