@@ -2,160 +2,345 @@
 <html>
 
 <head>
+	<meta charset="utf-8">
+	<style type="text/css">
+		@font-face {
+			font-family: 'flama';
+			src: url('assets/flamamediumregular.woff2') format('woff2'),
+			url('assets/flamamediumregular.woff') format('woff');
+			font-weight: 600;
+			font-style: normal;
+		}
 
-  <meta charset="utf-8">
-  <link rel="stylesheet" type="text/css" href="common.css">
-  <style type="text/css">
+		@font-face {
+			font-family: 'flama';
+			src: url('assets/flamalightregular.woff2') format('woff2'),
+			url('assets/flamalightregular.woff') format('woff');
+			font-weight: 400;
+			font-style: normal;
+		}
 
-  	.container{
-  		display: grid;
-  		grid-template-columns: 75vw 25vw;
-  		grid-template-rows: 100vh;
-  		grid-template-areas: "vis sidebar"
-  	}
+		body {
+			margin: 0;
+			padding: 0;
+			/*overflow: hidden;*/
+			background: #f0f0f0;
+			font-family: "flama";
+			line-height: 1.5;
+			color: #333;
+		}
 
-    a{
-      color: inherit;
-      text-decoration: none;
-    }
 
-  	.vis{
-  		grid-area: vis;
-  	}
+		* {
+			box-sizing: border-box;
+		}
 
-    h1{
-      margin: 0 0 1em;
-      float: none;
-    }
+		a {
+			color: inherit;
+			text-decoration: none;
+		}
 
-    .menu{
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: auto auto;
-      width: 100%;
-      grid-gap: .5em;
-      margin: 0;
-      padding: 0;
-      height: auto;
-    }
+		p a {
+			color: #5A4ED9;
+		}
 
-    .menu li{
-      margin: 0;
-      padding: 0;
-    }
+		iframe {
+			display: block;
+			width: 100%;
+			height: 100%;
+			border: none;
 
-    .active{
-      border: none;
-    }
+			float: left;
+		}
 
-  	.sidebar{
-  		grid-area: sidebar;
-  		padding: 1em;
-      position: relative;
-      background: #FFF;
-  	}
+		#cHeader_navigation {
+			font-size: .8em;
+			color: #777;
+			margin: -.3em 0 .3em;
+		}
 
-    .credits {
-      color: #777;
-      position: absolute;
-      bottom: 0;
-      padding: 0 1em 1em 0;
-      font-size: .8em;
-    }
+		h1 {
+			font-weight: 400;
+			margin: 0 0 .5em;
+			padding: 0;
+			float: left;
+			text-transform: uppercase;
+			font-size: 1.5em;
+			letter-spacing: .05em;
+		}
 
-    .annotation p {
-      display: none;
-    }
+		.header {
+			background: white;
+			padding: 1em 1em 0;
+			width: 100%;
+			overflow: auto;
+		}
 
-  </style>
-  <script type="text/javascript">
-    function menuChange(){
+		.content {
+			width: 100%;
+			height: 100vh;
+			clear: both;
+		}
 
-      var selectedItem = location.hash.split("#").pop();
-      var allAnchors = document.querySelectorAll(".menu a");
-      var matchedAnchors = document.querySelectorAll(".menu a[href='"+location.hash+"']");
+		.large {
+			font-size: 1.25em;
+		}
 
-      if(!matchedAnchors.length) {
-        // empty or invalid hash - take first anchor
-        location.hash = allAnchors[0].href.split("#").pop();
-        return;
-      }
 
-      allAnchors.forEach(function(item) {
-        item.classList.remove("active");
-      });
+		.content p {
+			float: left;
+			max-width: 32em;
+			margin: 1em;
+		}
 
-      document.querySelectorAll(".menu a[href='#" + selectedItem + "']")[0].classList.add("active");
-      document.getElementById("visframe").src= selectedItem + "_vis.html#nofullscreen";
+		.content p strong {
+			font-weight: bold;
+			/*text-transform: uppercase;*/
+			letter-spacing: .02em;
+			margin-right: .3em;
+		}
 
-      document.querySelectorAll(".annotation p").forEach(function(item) {
-        if(item.getAttribute("data-for") === selectedItem){
-          item.style.display = "block";
-        } else {
-          item.style.display = "none";
-        }
-      });
-    }
+		.menu {
+			display: block;
+			float: right;
+			padding: 0;
+			margin: .6em .3em 0 0;
+			overflow: auto;
+		}
 
-    window.onhashchange = menuChange;
-    window.onload = menuChange;
-  </script>
+		@media (max-width:960px) {
+
+			h1 {
+				float: none;
+			}
+
+			.menu {
+				float: left;
+				margin: 0;
+			}
+		}
+
+		.menu li {
+			list-style: none;
+			display: block;
+			margin: 0 0 0 -.6em;
+			padding: 0 1em;
+			float: left;
+
+			/*border: 1px solid red;*/
+		}
+
+
+		.menu li img {
+			display: block;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.menu li span {
+			display: block;
+			width: 100%;
+			height: auto;
+			padding: .3em 0 1em 0;
+			text-transform: uppercase;
+			letter-spacing: .05em;
+			font-size: .8em;
+		}
+
+		.menu li a {
+			display: inline-block;
+			width: 100%;
+		}
+
+		.active {
+			font-weight: 600;
+			border-bottom: 3px solid #555;
+		}
+
+		button#fullscreen {
+			position: absolute;
+			top: 4px;
+			right: 1em;
+			border: none;
+			text-transform: uppercase;
+			background: #dddddd;
+			color: #333;
+			font-size: 12px;
+			padding: 4px 5px;
+			font-family: "flamalightregular";
+		}
+
+
+		.container {
+			display: grid;
+			grid-template-columns: 75vw 25vw;
+			grid-template-rows: 100vh;
+			grid-template-areas: "vis sidebar"
+		}
+
+		a {
+			color: inherit;
+			text-decoration: none;
+		}
+
+		.vis {
+			grid-area: vis;
+		}
+
+		h1 {
+			margin: 0 0 1em;
+			float: none;
+		}
+
+		.menu {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: auto auto;
+			width: 100%;
+			grid-gap: .5em;
+			margin: 0;
+			padding: 0;
+			height: auto;
+		}
+
+		.menu li {
+			margin: 0;
+			padding: 0;
+		}
+
+		.active {
+			border: none;
+		}
+
+		.sidebar {
+			grid-area: sidebar;
+			padding: 1em;
+			position: relative;
+			background: #FFF;
+		}
+
+		.credits {
+			color: #777;
+			position: absolute;
+			bottom: 0;
+			padding: 0 1em 1em 0;
+			font-size: .8em;
+		}
+
+		.annotation p {
+			display: none;
+		}
+	</style>
+	<script type="text/javascript">
+		function menuChange() {
+
+			var selectedItem = location.hash.split("#").pop();
+			var allAnchors = document.querySelectorAll(".menu a");
+			var matchedAnchors = document.querySelectorAll(".menu a[href='" + location.hash + "']");
+
+			if (!matchedAnchors.length) {
+				// empty or invalid hash - take first anchor
+				location.hash = allAnchors[0].href.split("#").pop();
+				return;
+			}
+
+			allAnchors.forEach(function (item) {
+				item.classList.remove("active");
+			});
+
+			document.querySelectorAll(".menu a[href='#" + selectedItem + "']")[0].classList.add("active");
+			document.getElementById("visframe").src = selectedItem + "_vis.html#nofullscreen";
+
+			document.querySelectorAll(".annotation p").forEach(function (item) {
+				if (item.getAttribute("data-for") === selectedItem) {
+					item.style.display = "block";
+				} else {
+					item.style.display = "none";
+				}
+			});
+		}
+
+		window.onhashchange = menuChange;
+		window.onload = menuChange;
+	</script>
 </head>
 
 <body>
-  <div class="container">
-  	<div class="vis">
-  		<iframe scrolling="no" id="visframe" name="visframe"></iframe>
-  	</div>
+	<div class="container">
+		<div class="vis">
+			<iframe scrolling="no" id="visframe" name="visframe"></iframe>
+		</div>
 
-  	<div class="sidebar">
-  		<h1><a href="index.html">well-formed&thinsp;.&thinsp;eigenfactor</a></h1>
+		<div class="sidebar">
+			<h1>
+				<a href="index.html">well-formed&thinsp;.&thinsp;eigenfactor</a>
+			</h1>
 
-  		<ul class="menu">
+			<ul class="menu">
 
-  			<li>
-  				<a href="#radial">
-  					<img src="img/radial2.gif" />
-  					<span>Radial flow</span>
-  				</a>
-  			</li>
+				<li>
+					<a href="#radial">
+						<img src="img/radial2.gif" />
+						<span>Radial flow</span>
+					</a>
+				</li>
 
-  			<li>
-  				<a href="#sankey">
-  					<img src="img/flow2.jpg" />
-  					<span>Fields over time</span>
-  				</a>
-  			</li>
+				<li>
+					<a href="#sankey">
+						<img src="img/flow2.jpg" />
+						<span>Fields over time</span>
+					</a>
+				</li>
 
-  			<li>
+				<li>
 
-  				<a href="#treemap">
-  					<img src="img/treemap2.gif" />
-  					<span>Field hierarchy</span>
-  				</a>
-  			</li>
+					<a href="#treemap">
+						<img src="img/treemap2.gif" />
+						<span>Field hierarchy</span>
+					</a>
+				</li>
 
-        <li>
-          <a href="#map">
-            <img src="img/map2.gif"/>
-            <span>Network map</span>
-          </a>
-        </li>
+				<li>
+					<a href="#map">
+						<img src="img/map2.gif" />
+						<span>Network map</span>
+					</a>
+				</li>
 
-  		</ul>
-      <div class="annotation">
-  		  <p data-for="radial">This visualization gives an overview of the whole citation network. The colors represent the four main groups of journals, which are further subdivided into fields in the outer ring. The segments of the inner ring represent the individual journals, scaled by Eigenfactor® Score.<br/><br/>In the initial view, the top 1000 citation links are plotted. Line size and opacity represents connection strength. The Bezier curves follow the hierarchical cluster structure, using the hierarchical edge bundling technique (pdf). Selecting a single journal (inner ring) or whole field (outer ring) displays all citation flow coming in or out of the selection. The color is based on the cluster color of the origin node. </p>
-        <p data-for="sankey">Inspired by Sankey diagrams and stacked bar charts, this diagram displays changes in Eigenfactor® Score and clustering over time. The columns corresponds to the years 1997, 1999, 2001, 2003 and 2005. In each year, the journals are grouped vertically according to their cluster structure; within a cluster, they are ordered by their Eigenfactor® Score. Bars belonging to the same journal are connected. Clicking highlights both the selected journal over the years, and all clusters it has been part of. This allows to track both changes in journal influence as well as changes in cluster structure. </p>
-        <p data-for="treemap">This visualization displays a hierarchical clustering of journals in the form of a treemap. The size of a journal marker corresponds to its Eigenfactor® Score. Click one of the rectangles in order to see the amount of citation flow from other journals. The black arrow indicates outgoing citation flow (from the selected journal), the white one incoming citations. The arrow size indicates the amount of citation flow. </p>
-        <p data-for="map">This map visualization puts journals, which frequently cite each other, closer together. You can drag the white magnification lens around to enlarge a part of the map for closer inspection. Clicking one of the nodes will highlight all its connections. If a journal is selected, the node sizes represent the relative amount of citation flow (incoming and outgoing) with respect to the selection; otherwise, they are scaled by their Eigenfactor® Score.</p>
-      </div>
+			</ul>
+			<div class="annotation">
+				<p data-for="radial">This visualization gives an overview of the whole citation network. The colors represent the four main groups of journals,
+					which are further subdivided into fields in the outer ring. The segments of the inner ring represent the individual
+					journals, scaled by Eigenfactor® Score.
+					<br/>
+					<br/>In the initial view, the top 1000 citation links are plotted. Line size and opacity represents connection strength.
+					The Bezier curves follow the hierarchical cluster structure, using the hierarchical edge bundling technique (pdf). Selecting
+					a single journal (inner ring) or whole field (outer ring) displays all citation flow coming in or out of the selection.
+					The color is based on the cluster color of the origin node. </p>
+				<p data-for="sankey">Inspired by Sankey diagrams and stacked bar charts, this diagram displays changes in Eigenfactor® Score and clustering
+					over time. The columns corresponds to the years 1997, 1999, 2001, 2003 and 2005. In each year, the journals are grouped
+					vertically according to their cluster structure; within a cluster, they are ordered by their Eigenfactor® Score. Bars
+					belonging to the same journal are connected. Clicking highlights both the selected journal over the years, and all clusters
+					it has been part of. This allows to track both changes in journal influence as well as changes in cluster structure.
+				</p>
+				<p data-for="treemap">This visualization displays a hierarchical clustering of journals in the form of a treemap. The size of a journal marker
+					corresponds to its Eigenfactor® Score. Click one of the rectangles in order to see the amount of citation flow from
+					other journals. The black arrow indicates outgoing citation flow (from the selected journal), the white one incoming
+					citations. The arrow size indicates the amount of citation flow. </p>
+				<p data-for="map">This map visualization puts journals, which frequently cite each other, closer together. You can drag the white magnification
+					lens around to enlarge a part of the map for closer inspection. Clicking one of the nodes will highlight all its connections.
+					If a journal is selected, the node sizes represent the relative amount of citation flow (incoming and outgoing) with
+					respect to the selection; otherwise, they are scaled by their Eigenfactor® Score.</p>
+			</div>
 
-  		<div class="credits">
-  			Moritz Stefaner with Martin Rosvall, Jevin West and Carl Bergstrom at the Bergstrom Lab, University of Washington.<br/> Code update 2018 by Sylvain Lesage and Philippe Rivière.
-  		</div>
+			<div class="credits">
+				Moritz Stefaner with Martin Rosvall, Jevin West and Carl Bergstrom at the Bergstrom Lab, University of Washington.
+				<br/> Code update 2018 by Sylvain Lesage and Philippe Rivière.
+			</div>
 
-  	</div>
-  </div>
+		</div>
+	</div>
 
 </body>
 
