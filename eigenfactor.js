@@ -49,8 +49,8 @@ svg text::selection {
 
     text { font-family: flamamediumregular, sans-serif; }
 
-    .maintitle rect { fill: white; }
-    .maintitle text { fill: #343434; font-size: 24px; font-family: flamalightregular; }
+    #maintitle rect, .maintitle rect { fill: white; }
+    #maintitle text, .maintitle text { fill: #343434; font-size: 24px; font-family: flamalightregular; }
 
     g.tooltip {}
     g.tooltip rect.background {fill: #000000; stroke: #333333; fill-opacity: 0.8}
