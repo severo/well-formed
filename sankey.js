@@ -34,11 +34,8 @@ function buildchart() {
     .html(
       `
       <defs>
-      <style type="text/css">${svgcss()}${svgcsssankey}</style>
-      <filter id="drop-shadow">
-      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.5">
-      </feDropShadow>
-      </filter>
+        <style type="text/css">${svgcss()}${svgcsssankey}</style>
+        ${svgshadowfilter()}
       </defs>
       `
     )

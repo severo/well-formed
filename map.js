@@ -33,8 +33,10 @@ function buildchart() {
     .attr("height", height + config.titleHeight)
     .html(
       `
-      <style type="text/css">${svgcss()}${svgcssmap}</style>
-      <defs>${svgshadowfilter}</defs>
+      <defs>
+        <style type="text/css">${svgcss()}${svgcssmap}</style>
+        ${svgshadowfilter()}
+      </defs>
       `
     );
 
