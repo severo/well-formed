@@ -1,12 +1,7 @@
 const svgcssradial = `
-g#links path.link {
-  /*stroke: #333;*/
-  /*stroke-opacity: 0.2;*/
-  /*stroke-width: 0.2;*/
-  fill: none;
-  pointer-events: none;
-}
-g#labels text.label { font-family: flamalightregular; font-size: 13px; }
+g#links path.link { fill: none; pointer-events: none; }
+g#links path.link.colour { mix-blend-mode: multiply }
+g#labels text.label { font-family: flamalightregular; font-size: 10px; mix-blend-mode: darken; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
 g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
@@ -23,7 +18,7 @@ config.titleHeight = 35;
  * Build the chart
  */
 function buildchart() {
-  results.radius = Math.min(width, height) / 2 - 40;
+  results.radius = Math.min(width, height - config.titleHeight) / 2 - 120;
   const initialAngle = Math.PI / 5; /* TODO: understand why */
   results.maxLinks = 1000;
 
@@ -32,7 +27,7 @@ function buildchart() {
   );
   results.radialData = addAngleAndRadius(
     results.radialData,
-    results.radius - 10,
+    results.radius,
     initialAngle,
     results.radialData.value
   );
@@ -81,8 +76,12 @@ function buildchart() {
 
   const graph = svg
     .append("g")
-    .attr("id", "vis")
-    .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
+    .attr("id", "radial")
+    .attr("transform", `translate(${[width / 2, height / 2]})`);
+  
+  graph.append("g").attr("id", "all");
+  graph.append("g").attr("id", "tooltip");
+
 
   const title = svg.append("g").attr("id", "maintitle");
   title.append("rect").attr("height", config.titleHeight);
@@ -214,7 +213,7 @@ function goToNormalState() {
     results.leavesData,
     results.radius
   );
-  drawLabels(
+  drawOuterArcsLabels(
     g.append("g").attr("id", "labels"),
     results.groupsData
       .filter(
@@ -313,14 +312,14 @@ function selectInnerArc(arc) {
         })
       );
       color.opacity = 0.3 + 0.6 * link.normalizedWeight;
-      /* TODO: reproduce the Flare MULTIPLY blend mode to darken */
-      return color.darker();
-    }
+      return color;
+    },
+    true
   );
 
   /* Labels */
   d3.select("g#labels").remove();
-  drawLabels(
+  drawInnerArcsLabels(
     d3
       .select("g#vis")
       .append("g")
@@ -349,6 +348,8 @@ function selectOuterArc(arc) {
   const childrenIds = arc.children.map(e => e.data.id);
 
   const innerArcs = d3.selectAll("g#innerArcs .innerArc");
+  innerArcs.classed("clicked", false);
+
   const localWeights = new Map([[arc.data.id, 1]]);
   data.flowEdges
     .filter(link => childrenIds.includes(link.source))
@@ -388,31 +389,33 @@ function selectOuterArc(arc) {
 
   // Links
   const links = d3.select("g#links").remove();
+  const linksData = results.linksData.filter(
+    l =>
+      childrenIds.includes(l.source.data.id) ||
+      childrenIds.includes(l.target.data.id)
+  );
+
   drawLinks(
     d3
       .select("g#vis")
       .append("g")
       .attr("id", "links"),
-    results.linksData.filter(
-      l =>
-        childrenIds.includes(l.source.data.id) ||
-        childrenIds.includes(l.target.data.id)
-    ),
+    linksData,
     link => {
       const color = d3.rgb(
         getColorByIndexAndWeight({
           index: +link.source.parent.parent.id,
-          weight: link.localWeight,
+          weight: link.normalizedWeight,
           MIN_SAT: 0.4,
           MAX_SAT: 0.95,
           MIN_BRIGHTNESS: 0.8,
           MAX_BRIGHTNESS: 0.5
         })
       );
-      color.opacity = 0.3 + 0.6 * link.localWeight;
-      // TODO: reproduce the Flare MULTIPLY blend mode to darken
-      return color.darker();
-    }
+      color.opacity = 0.3 + 0.6 * link.normalizedWeight;
+      return color;
+    },
+    true
   );
 
   // Labels
@@ -421,7 +424,7 @@ function selectOuterArc(arc) {
     .select("g#vis")
     .append("g")
     .attr("id", "labels");
-  drawLabels(
+  drawOuterArcsLabels(
     g,
     results.groupsData.filter(d => d.data.id === arc.data.id).map(d => {
       return {
@@ -432,7 +435,7 @@ function selectOuterArc(arc) {
     }),
     results.radius
   );
-  drawLabels(
+  drawInnerArcsLabels(
     g,
     results.leavesData
       .filter(d => {
@@ -493,7 +496,7 @@ function drawOuterArcs(g, data, radius) {
     .on("click", handleClick);
 }
 
-function drawLinks(g, linksData, colorFn) {
+function drawLinks(g, linksData, colorFn, colourClass = false) {
   return g
     .selectAll("path")
     .data(linksData)
@@ -504,8 +507,12 @@ function drawLinks(g, linksData, colorFn) {
       const path = moveEdgePoints(link.source.path(link.target));
       return line(path);
     })
-    .attr("stroke-width", d => 1 + 5 * d.normalizedWeight)
-    .attr("stroke", d => colorFn(d));
+    .attr(
+      "stroke-width",
+      d => (1 + 5 * d.normalizedWeight) / (colourClass ? 1 : 2)
+    )
+    .attr("stroke", d => colorFn(d))
+    .classed("colour", colourClass);
 }
 
 function moveEdgePoints(path) {
@@ -524,6 +531,12 @@ function moveEdgePoints(path) {
   return path;
 }
 
+function drawInnerArcsLabels(g, labels, radius) {
+  drawLabels(g, labels, radius);
+}
+function drawOuterArcsLabels(g, labels, radius) {
+  drawLabels(g, labels, radius + 14);
+}
 function drawLabels(g, labels, radius) {
   return g
     .selectAll("text")
@@ -537,7 +550,7 @@ function drawLabels(g, labels, radius) {
         "rotate(" +
         (d.angle - 90) +
         ")translate(" +
-        (radius + 20) +
+        (radius + 28) +
         ",0)" +
         (d.angle < 180 ? "" : "rotate(180)")
       );
@@ -556,15 +569,15 @@ function drawLabels(g, labels, radius) {
 function innerArc(radius) {
   return d3
     .arc()
-    .outerRadius(radius)
-    .innerRadius(radius - 10);
+    .outerRadius(radius + 10)
+    .innerRadius(radius);
 }
 
 function outerArc(radius) {
   return d3
     .arc()
-    .outerRadius(radius + 11)
-    .innerRadius(radius + 1);
+    .outerRadius(radius + 21)
+    .innerRadius(radius + 11);
 }
 
 const line = d3
