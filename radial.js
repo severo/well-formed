@@ -76,11 +76,11 @@ function buildchart() {
 
   const graph = svg
     .append("g")
-    .attr("id", "radial")
+    .attr("id", "vis") // was: "radial"
     .attr("transform", `translate(${[width / 2, height / 2]})`);
-  
+
   graph.append("g").attr("id", "all");
-  graph.append("g").attr("id", "tooltip");
+  // graph.append("g").attr("id", "tooltip");
 
 
   const title = svg.append("g").attr("id", "maintitle");
