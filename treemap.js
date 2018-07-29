@@ -24,7 +24,7 @@ g.out path {fill: #333333; stroke: #333333;}
  */
 function buildchart() {
   results.treemapData = treemap(data.tree);
-  results.leavesLookup = new Map();
+  results.leavesLookup = {};
   results.treemapData
     .leaves()
     .forEach(d => (results.leavesLookup[d.data.id] = d));
@@ -252,11 +252,11 @@ function inout() {
       in: data.flowEdges.filter(d => d.source === clicked),
       out: data.flowEdges.filter(d => d.target === clicked)
     },
-    highlighted = new Map();
+    highlighted = {};
 
   // SCALE
   ["in", "out"].forEach(arrow => {
-    const weights = new Map();
+    const weights = {};
     const source = arrow == "in" ? "target" : "source";
     links[arrow].forEach(d => {
       weights[d[source]] = +d.normalizedWeight;

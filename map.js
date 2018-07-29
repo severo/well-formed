@@ -24,7 +24,7 @@ config.titleHeight = 35;
  * Build the chart
  */
 function buildchart() {
-  results.journalsLookup = new Map();
+  results.journalsLookup = {};
   data.ids.forEach(d => (results.journalsLookup[d.id] = d));
 
   const svg = d3
@@ -112,7 +112,7 @@ function buildchart() {
     .domain(d3.extent(data.nodesmap, d => d.y))
     .range([-height / 2, height]);
 
-  results.nodesmap = new Map();
+  results.nodesmap = {};
   data.nodesmap.forEach(d => (results.nodesmap[d.id] = [posx(d.x), posy(d.y)]));
   results.leaves = data.tree.filter(d => "eigenfactor" in d);
   results.sectorById = new Map();
