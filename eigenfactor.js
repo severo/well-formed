@@ -31,30 +31,14 @@ svg text::selection {
     background: none;
 }
 
-    @font-face {
-        font-family: 'flamamediumregular';
-        src: url('assets/flamamediumregular.woff2') format('woff2'),
-             url('assets/flamamediumregular.woff') format('woff');
-        font-weight: normal;
-        font-style: normal;
-    }
-
-    @font-face {
-        font-family: 'flamalightregular';
-        src: url('assets/flamalightregular.woff2') format('woff2'),
-             url('assets/flamalightregular.woff') format('woff');
-        font-weight: normal;
-        font-style: normal;
-    }
-
-    text { font-family: flamamediumregular, sans-serif; }
+    text { font-family: flama, sans-serif; font-weight: bold; }
 
     #maintitle rect, .maintitle rect { fill: white; }
-    #maintitle text, .maintitle text { fill: #343434; font-size: 24px; font-family: flamalightregular; }
+    #maintitle text, .maintitle text { fill: #343434; font-size: 24px; font-family: flama, sans-serif; font-weight: normal; }
 
     g.tooltip {}
     g.tooltip rect.background {fill: #000000; stroke: #333333; fill-opacity: 0.8}
-    g.tooltip text.text {font-family: flamamediumregular; font-size: 12px;}
+    g.tooltip text.text {font-family: flama, sans-serif; font-weight: bold; font-size: 12px;}
     g.tooltip text.text tspan.title {fill: #ffffff;}
     g.tooltip text.text tspan.detail {fill: #aaaaaa;}
 
@@ -161,7 +145,7 @@ function flowEdges(links) {
   return l.map(e => {
     if ("weight" in e) {
       e.normalizedWeight =
-        Math.log(1 + (e.weight / maxEdgeWeight) * 10) / Math.log(11);
+        Math.log(1 + e.weight / maxEdgeWeight * 10) / Math.log(11);
     }
     return e;
   });
@@ -345,7 +329,8 @@ function tooltip(
 
   function appendTspan(t, c, x, dy, text) {
     if (text !== "")
-      t.append("tspan")
+      t
+        .append("tspan")
         .classed(c, true)
         .attr("x", x)
         .attr("dy", dy)
@@ -360,7 +345,10 @@ function tooltip(
 
   /* Position */
   const bbox = text.node().getBBox();
-  rect.attr("width", bbox.width + 10).attr("height", bbox.height + 11).attr("y", -4);
+  rect
+    .attr("width", bbox.width + 10)
+    .attr("height", bbox.height + 11)
+    .attr("y", -4);
 
   /* Manage the bottom and right edges */
   let x = cursor[0];

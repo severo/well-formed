@@ -5,7 +5,7 @@ svg.sankey g.journals g.journal.clicked rect.node,
 svg.sankey g.journals g.journal:hover rect.node {fill: #222222}
 svg.sankey g.journals g.journal:hover linearGradient.gradient stop,
 svg.sankey g.journals g.journal.clicked linearGradient.gradient stop {stop-color: #222222}
-svg.sankey text.title {font-family: flamalightregular, sans-serif; font-size: 18px; fill: #BBBBBB; text-align: left}
+svg.sankey text.title {font-weight: normal; font-size: 18px; fill: #BBBBBB; text-align: left}
 `;
 
 const margin = 0.006;
@@ -194,7 +194,8 @@ function setTitle(title) {
 function goToNormalState() {
   clicked = -1;
   setTitle("");
-  d3.select("svg .journals")
+  d3
+    .select("svg .journals")
     .selectAll(`g.journal.clicked`)
     .classed("clicked", false);
   unfadeFadedJournals();
@@ -218,7 +219,8 @@ function unfadeFadedJournals() {
 function selectNode(node) {
   setTitle(node.longLabel + " (" + node.year + ")");
 
-  d3.select("svg .journals")
+  d3
+    .select("svg .journals")
     .selectAll(`g.journal`)
     .classed("clicked", d => d.journalId === node.journalId);
 }

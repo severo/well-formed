@@ -3,17 +3,17 @@
  */
 
 @font-face {
-  font-family: 'flamamediumregular';
-  src: url('assets/flamamediumregular.woff2') format('woff2'),
-       url('assets/flamamediumregular.woff') format('woff');
+  font-family: "flama";
+  src: url("assets/flamamediumregular.woff2") format("woff2"),
+    url("assets/flamamediumregular.woff") format("woff");
   font-weight: bold;
   font-style: normal;
 }
 
 @font-face {
-  font-family: 'flamalightregular';
-  src: url('assets/flamalightregular.woff2') format('woff2'),
-       url('assets/flamalightregular.woff') format('woff');
+  font-family: "flama";
+  src: url("assets/flamalightregular.woff2") format("woff2"),
+    url("assets/flamalightregular.woff") format("woff");
   font-weight: normal;
   font-style: normal;
 }
@@ -23,26 +23,25 @@ body {
   padding: 0;
   /*overflow: hidden;*/
   background: #f0f0f0;
-  font-family: "flamalightregular";
+  font-family: "flama";
   line-height: 1.5;
   color: #333;
 }
-
 
 * {
   box-sizing: border-box;
 }
 
-a{
+a {
   color: inherit;
   text-decoration: none;
 }
 
 p a {
-  color: #5A4ED9;
+  color: #5a4ed9;
 }
 
-iframe{
+iframe {
   display: block;
   width: 100%;
   height: 100%;
@@ -51,22 +50,23 @@ iframe{
   float: left;
 }
 
-#cHeader_navigation{
-  font-size: .8em;
+#cHeader_navigation {
+  font-size: 0.8em;
   color: #777;
-  margin: -.3em 0 .3em;
+  margin: -0.3em 0 0.3em;
 }
 
-h1{
-  margin: 0 0 .5em;
+h1 {
+  margin: 0 0 0.5em;
   padding: 0;
   float: left;
   text-transform: uppercase;
   font-size: 1.5em;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
+  font-weight: normal;
 }
 
-.header{
+.header {
   background: white;
   padding: 1em 1em 0;
   width: 100%;
@@ -79,106 +79,101 @@ h1{
   clear: both;
 }
 
-.large{
+.large {
   font-size: 1.25em;
 }
 
-
-.content p{
+.content p {
   float: left;
   max-width: 32em;
   margin: 1em;
 }
 
-.content p strong{
+.content p strong {
   font-weight: bold;
   /*text-transform: uppercase;*/
-  letter-spacing: .02em;
-  margin-right: .3em;
+  letter-spacing: 0.02em;
+  margin-right: 0.3em;
 }
 
-.menu{
+.menu {
   display: block;
   float: right;
   padding: 0;
-  margin: .6em .3em 0 0;
+  margin: 0.6em 0.3em 0 0;
   overflow: auto;
 }
 
-@media (max-width:960px) {
-
-  h1{
+@media (max-width: 960px) {
+  h1 {
     float: none;
   }
 
-  .menu{
+  .menu {
     float: left;
     margin: 0;
   }
 }
 
-.menu.teaser{
+.menu.teaser {
   padding: 1em;
   grid-template-columns: 1fr 1fr 1fr 1fr;
   display: grid;
   width: 100%;
 }
 
-@media (max-width:1400px) {
-  .menu.teaser{
+@media (max-width: 1400px) {
+  .menu.teaser {
     grid-template-columns: 1fr 1fr;
-   }
+  }
 }
 
-@media (max-width:960px) {
-  .menu.teaser{
+@media (max-width: 960px) {
+  .menu.teaser {
     grid-template-columns: 1fr;
-   }
+  }
 }
 
-.menu li{
+.menu li {
   list-style: none;
   display: block;
-  margin: 0 0 0 -.6em;
+  margin: 0 0 0 -0.6em;
   padding: 0 1em;
   float: left;
 
   /*border: 1px solid red;*/
 }
 
-
-.menu li img{
+.menu li img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.menu li span{
+.menu li span {
   display: block;
   width: 100%;
   height: auto;
-  padding: .3em 0 1em 0;
+  padding: 0.3em 0 1em 0;
   text-transform: uppercase;
-  letter-spacing: .05em;
-  font-size: .8em;
+  letter-spacing: 0.05em;
+  font-size: 0.8em;
 }
 
-.menu li a{
+.menu li a {
   display: inline-block;
   width: 100%;
 }
 
-
-.active{
+.active {
   font-weight: bold;
   border-bottom: 3px solid #555;
 }
 
-.content.grid{
+.content.grid {
   display: grid;
-  grid-template-areas: "vis vis vis vis" ". info-text-1 info-text-2 ."
-  ;
+  grid-template-areas: "vis vis vis vis" ". info-text-1 info-text-2 .";
   grid-template-columns: 1fr auto auto 1fr;
   grid-template-rows: minmax(800px, 1fr) auto;
   width: auto;
@@ -186,10 +181,11 @@ h1{
   padding-top: 10px;
 }
 
-@media (min-width:1400px) and (min-height:800px) {
-  .content.grid{
-    grid-template-areas: "vis info-text-1"
-    "vis info-text-2" "vis .";
+@media (min-width: 1400px) and (min-height: 800px) {
+  .content.grid {
+    grid-template-areas:
+      "vis info-text-1"
+      "vis info-text-2" "vis .";
     grid-template-columns: 1fr auto;
     grid-template-rows: auto auto minmax(800px, 1fr);
     position: absolute;
@@ -200,23 +196,24 @@ h1{
   }
 }
 
-@media (max-width:920px) {
-  .content.grid{
-    grid-template-areas: "vis" "info-text-1"
-    "info-text-2";
+@media (max-width: 920px) {
+  .content.grid {
+    grid-template-areas:
+      "vis" "info-text-1"
+      "info-text-2";
     grid-template-columns: 1fr;
   }
 }
 
-.content.grid .info-text-1{
+.content.grid .info-text-1 {
   grid-area: info-text-1;
 }
 
-.content.grid .info-text-2{
+.content.grid .info-text-2 {
   grid-area: info-text-2;
 }
 
-.content.grid .vis{
+.content.grid .vis {
   grid-area: vis;
 }
 
@@ -230,6 +227,5 @@ button#fullscreen {
   color: #333;
   font-size: 12px;
   padding: 4px 5px;
-  font-family: "flamalightregular";
+  font-family: flama;
 }
-

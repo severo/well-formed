@@ -1,7 +1,7 @@
 const svgcssradial = `
 g#links path.link { fill: none; pointer-events: none; }
 g#links path.link.colour { mix-blend-mode: multiply }
-g#labels text.label { font-family: flamalightregular; font-size: 10px; mix-blend-mode: darken; }
+g#labels text.label { font-weight: normal; font-size: 10px; mix-blend-mode: darken; }
 
 g#innerArcs path.innerArc.clicked { fill: #222222 }
 g#innerArcs path.innerArc.unlinked { fill: #DDDDDD }
@@ -81,7 +81,6 @@ function buildchart() {
 
   graph.append("g").attr("id", "all");
   // graph.append("g").attr("id", "tooltip");
-
 
   const title = svg.append("g").attr("id", "maintitle");
   title.append("rect").attr("height", config.titleHeight);
@@ -223,7 +222,7 @@ function goToNormalState() {
       ) // show label if large enough, and there is in fact one
       .map(d => {
         return {
-          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          angle: (180 / Math.PI * (d.startAngle + d.endAngle) / 2) % 360,
           text: d.data.label,
           fill: "#888888"
         };
@@ -286,7 +285,8 @@ function selectInnerArc(arc) {
   });
 
   /* Outer arcs */
-  d3.select("g#outerArcs")
+  d3
+    .select("g#outerArcs")
     .selectAll(".outerArc")
     .classed("unlinked", true);
 
@@ -333,7 +333,7 @@ function selectInnerArc(arc) {
           221 - Math.min(153, Math.floor(localWeights.get(d.data.id) * 153));
         const fill = d3.rgb(brightness, brightness, brightness).toString();
         return {
-          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          angle: (180 / Math.PI * (d.startAngle + d.endAngle) / 2) % 360,
           text: d.data.label,
           fill: d.data.id === arc.data.id ? "#222222" : fill
         };
@@ -382,7 +382,8 @@ function selectOuterArc(arc) {
   });
 
   // Outer arcs
-  d3.select("g#outerArcs")
+  d3
+    .select("g#outerArcs")
     .selectAll(".outerArc")
     .classed("unlinked", d => d.data.id !== arc.data.id)
     .classed("clicked", d => d.data.id === arc.data.id);
@@ -428,7 +429,7 @@ function selectOuterArc(arc) {
     g,
     results.groupsData.filter(d => d.data.id === arc.data.id).map(d => {
       return {
-        angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+        angle: (180 / Math.PI * (d.startAngle + d.endAngle) / 2) % 360,
         text: d.data.label,
         fill: "#222222"
       };
@@ -446,7 +447,7 @@ function selectOuterArc(arc) {
           221 - Math.min(153, Math.floor(localWeights.get(d.data.id) * 153));
         const fill = d3.rgb(brightness, brightness, brightness).toString();
         return {
-          angle: (((180 / Math.PI) * (d.startAngle + d.endAngle)) / 2) % 360,
+          angle: (180 / Math.PI * (d.startAngle + d.endAngle) / 2) % 360,
           text: d.data.label,
           fill: fill
         };
@@ -595,12 +596,12 @@ const line = d3
  */
 function addAngleAndRadius(node, radius, startAngle, maxValue) {
   /* Add angles and radius to current node */
-  node.angleWidth = (node.value / maxValue) * Math.PI;
+  node.angleWidth = node.value / maxValue * Math.PI;
   node.padAngle = node.angleWidth > 0.003 ? 0.0015 : node.angleWidth;
   node.startAngle = startAngle;
   node.endAngle = startAngle + 2 * node.angleWidth;
   node.centerAngle = (node.endAngle + node.startAngle) / 2;
-  node.radius = (radius * node.depth) / (node.depth + node.height);
+  node.radius = radius * node.depth / (node.depth + node.height);
 
   /* Descend in the tree */
   if ("children" in node) {
