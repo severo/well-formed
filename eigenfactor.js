@@ -49,8 +49,8 @@ svg text::selection {
 
     text { font-family: flamamediumregular, sans-serif; }
 
-    .maintitle rect { fill: white; }
-    .maintitle text { fill: #343434; font-size: 24px; font-family: flamalightregular; }
+    #maintitle rect, .maintitle rect { fill: white; }
+    #maintitle text, .maintitle text { fill: #343434; font-size: 24px; font-family: flamalightregular; }
 
     g.tooltip {}
     g.tooltip rect.background {fill: #000000; stroke: #333333; fill-opacity: 0.8}
@@ -58,6 +58,14 @@ svg text::selection {
     g.tooltip text.text tspan.title {fill: #ffffff;}
     g.tooltip text.text tspan.detail {fill: #aaaaaa;}
 
+`;
+}
+function svgshadowfilter() {
+  return `
+        <filter id="drop-shadow">
+          <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.5">
+          </feDropShadow>
+        </filter>
 `;
 }
 
@@ -302,4 +310,62 @@ function getColorByIndexAndWeight({
    * function. */
   const palette = interpolateRgbFloor(minColor(hue), maxColor(hue));
   return palette(w);
+}
+
+function tooltip(
+  id,
+  w,
+  h,
+  title,
+  text1 = "",
+  text2 = "",
+  value1 = "",
+  value2 = ""
+) {
+  const cursor = d3.mouse(d3.select("svg").node());
+  d3.selectAll(".tooltip").remove();
+  const tooltip = d3
+    .select("g#tooltip")
+    .append("g")
+    .classed("tooltip", true)
+    .attr("id", id);
+
+  const rect = tooltip
+    .append("rect")
+    .classed("background", true)
+    .attr("x", 0)
+    .attr("y", 0)
+    .style("filter", "url(#drop-shadow)");
+
+  const text = tooltip
+    .append("text")
+    .classed("text", true)
+    .attr("x", 0)
+    .attr("y", 0);
+
+  function appendTspan(t, c, x, dy, text) {
+    if (text !== "")
+      t.append("tspan")
+        .classed(c, true)
+        .attr("x", x)
+        .attr("dy", dy)
+        .text(text);
+  }
+
+  appendTspan(text, "title", 5, "1em", title);
+  appendTspan(text, "detail", 5, "1em", text1);
+  appendTspan(text, "detail", "4.5em", 0, value1);
+  appendTspan(text, "detail", 5, "1em", text2);
+  appendTspan(text, "detail", "4.5em", 0, value2);
+
+  /* Position */
+  const bbox = text.node().getBBox();
+  rect.attr("width", bbox.width + 10).attr("height", bbox.height + 2);
+
+  /* Manage the bottom and right edges */
+  let x = cursor[0];
+  let y = cursor[1] + 26;
+  if (x + bbox.width + 8 + 2 > w) x = x - bbox.width - 10;
+  if (y + bbox.height + 26 + 2 > h) y = y - bbox.height - 10 - 26;
+  tooltip.attr("transform", `translate(${x},${y})`);
 }

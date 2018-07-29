@@ -33,63 +33,41 @@ function buildchart() {
     .attr("height", height + config.titleHeight)
     .html(
       `
-      <style type="text/css">${svgcss()}${svgcssmap}</style>
       <defs>
-        <style type="text/css"></style>
-        <filter id="drop-shadow">
-          <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="#000000" flood-opacity="0.5">
-          </feDropShadow>
-        </filter>
-      </defs>`
-    )
-    .append("g")
-    .attr("transform", `translate(0, ${config.titleHeight})`);
+        <style type="text/css">${svgcss()}${svgcssmap}</style>
+        ${svgshadowfilter()}
+      </defs>
+      `
+    );
 
   svg
     .append("rect")
-    .attr("y", -config.titleHeight)
-    .attr("width", width)
-    .attr("height", height + config.titleHeight)
+    .attr("id", "main")
+    .attr("width", "100%")
+    .attr("height", "100%")
     .attr("fill", "#f0f0f0");
 
-  svg.append("circle").attr("id", "lens");
+  const vis = svg
+    .append("g")
+    .attr("id", "vis")
+    .attr("transform", `translate(0, ${config.titleHeight})`);
+  vis.append("circle").attr("id", "lens");
+  vis.append("g").attr("id", "inout");
+  vis.append("g").attr("id", "leaves");
+
+  svg.append("g").attr("id", "maintitle");
+
+  svg.append("g").attr("id", "tooltip");
 
   function handleMouseOver(d, i) {
-    const cursor = d3.mouse(this);
-    d3.selectAll(".tooltip").remove();
-
-    const g = svg
-      .append("g")
-      .classed("tooltip", true)
-      .attr("id", "t-" + i);
-
-    const rect = g
-      .append("rect")
-      .classed("background", true)
-      .attr("x", 0)
-      .attr("y", 0)
-      .style("filter", "url(#drop-shadow)");
-
-    const text = g
-      .append("text")
-      .classed("text", true)
-      .attr("x", 0)
-      .attr("y", 0);
-
-    const tspan1 = text
-      .append("tspan")
-      .classed("title", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text(d.longLabel);
-
     if (clicked === -1 || d.id === clicked)
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dy", "1em")
-        .text("Eigenfactor: " + cutAfter(d.eigenfactor, 6));
+      tooltip(
+        "t-" + i,
+        width,
+        height,
+        d.longLabel,
+        "Eigenfactor: " + cutAfter(d.eigenfactor, 6)
+      );
     else {
       const inArray = data.flowEdges.filter(
         e => e.source === d.id && e.target === clicked
@@ -101,56 +79,24 @@ function buildchart() {
       let weightIn = inArray.length === 1 ? inArray[0].normalizedWeight : 0,
         weightOut = outArray.length === 1 ? outArray[0].normalizedWeight : 0;
 
-      if (!weightIn && !weightOut) {
-        g.html("");
-        return;
-      }
+      if (!weightIn && !weightOut)
+        tooltip("t-" + i, width, height, d.longLabel);
 
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dy", "1em")
-        .text("IN:");
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dx", "4.5em")
-        .text(cutAfter(weightIn, 6));
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dy", "1em")
-        .text("OUT:");
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dx", "4.5em")
-        .text(cutAfter(weightOut, 6));
+      tooltip(
+        "t-" + i,
+        width,
+        height,
+        d.longLabel,
+        "IN:",
+        "OUT:",
+        cutAfter(weightIn, 6),
+        cutAfter(weightOut, 6)
+      );
     }
-
-    const bbox = text.node().getBBox();
-    rect.attr("width", bbox.width + 8).attr("height", bbox.height);
-
-    /* Manage the bottom and right edges */
-    const x =
-      d.x0 +
-      cursor[0] -
-      (d.x0 + cursor[0] + bbox.width + 8 + 2 > width ? bbox.width + 8 : 0);
-    const y =
-      d.y0 +
-      cursor[1] +
-      (d.y0 + cursor[1] + bbox.height + 26 + 2 > height - config.titleHeight
-        ? -bbox.height - 6
-        : 26);
-    g.attr("transform", `translate(${x},${y})`);
   }
 
   function handleMouseOut(d, i) {
-    d3.select("#t-" + i).remove();
+    d3.select("g#tooltip #t-" + i).remove();
   }
 
   /*
@@ -175,9 +121,8 @@ function buildchart() {
     results.sectorById[d.id] = sector;
   });
 
-  const leaf = svg
-    .append("g")
-    .classed("leaves", true)
+  const leaf = d3
+    .select("g#vis g#leaves")
     .selectAll("g")
     .data(results.leaves)
     .enter()
@@ -233,7 +178,7 @@ function updatePositions(transition) {
     .attr("r", scaledRadius)
     .attr("transform", `translate(${[lens.x, lens.y]})`);
 
-  let change = d3.select(".leaves").selectAll(".journal");
+  let change = d3.select("#leaves").selectAll(".journal");
   if (transition) change = change.transition().duration(200);
 
   change.attr("transform", (d, i, e) => {
@@ -311,15 +256,7 @@ function add_interaction(chart) {
   svg.selectAll(".journal circle").on("click", click);
   svg.on("click", click);
 
-  const inout = d3
-    .select(chart)
-    .insert("g", "g")
-    .attr("id", "inout");
-
-  const title = svg
-    .append("g")
-    .classed("maintitle", true)
-    .attr("transform", `translate(${[0, -config.titleHeight]})`);
+  const title = d3.select("g#maintitle");
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
@@ -339,10 +276,10 @@ function click(d) {
 }
 
 function setTitle(title) {
-  const text = d3.select("svg .maintitle text");
+  const text = d3.select("svg g#maintitle text");
   text.text(title);
   const w = text.node().getBBox().width;
-  d3.select("svg .maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
+  d3.select("svg g#maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
 }
 
 function inout() {
