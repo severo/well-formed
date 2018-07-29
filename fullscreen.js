@@ -13,13 +13,10 @@ if (fullscreenEnabled) {
 function goFullscreen() {
   this._exitFired = false;
   if (fullScreenApi.supportsFullScreen) {
-    var container = d3.select("body").node();
-    if (fullScreenApi.isFullScreen(container)) {
-      fullScreenApi.cancelFullScreen(container);
-      d3.select("button#fullscreen").html("Fullscreen");
+    if (fullScreenApi.isFullScreen(document.body)) {
+      fullScreenApi.cancelFullScreen(document.body);
     } else {
-      fullScreenApi.requestFullScreen(container);
-      d3.select("button#fullscreen").html("&times;");
+      fullScreenApi.requestFullScreen(document.body);
     }
     setTimeout(redraw, 200);
   }
@@ -54,7 +51,6 @@ source : http://johndyer.name/native-fullscreen-javascript-api-plus-jquery-plugi
     // check for fullscreen support by vendor prefix
     for (var i = 0, il = browserPrefixes.length; i < il; i++) {
       fullScreenApi.prefix = browserPrefixes[i];
-
       if (
         typeof document[fullScreenApi.prefix + "CancelFullScreen"] !=
         "undefined"
@@ -91,6 +87,14 @@ source : http://johndyer.name/native-fullscreen-javascript-api-plus-jquery-plugi
         ? document.cancelFullScreen()
         : document[this.prefix + "CancelFullScreen"]();
     };
+
+    document.addEventListener(fullScreenApi.fullScreenEventName, function() {
+      if (fullScreenApi.isFullScreen(document.body)) {
+        d3.select("button#fullscreen").html("&times;");
+      } else {
+        d3.select("button#fullscreen").html("Fullscreen");
+      }
+    });
   }
 
   // jQuery plugin
