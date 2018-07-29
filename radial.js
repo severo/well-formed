@@ -68,33 +68,29 @@ function buildchart() {
         ${svgshadowfilter()}
       </defs>
       `
-    )
-    .append("g")
-    .attr("transform", `translate(0, ${config.titleHeight})`);
+    );
 
   svg
     .append("rect")
-    .attr("y", -config.titleHeight)
-    .attr("width", width)
-    .attr("height", height + config.titleHeight)
+    .attr("id", "main")
+    .attr("width", "100%")
+    .attr("height", "100%")
     .attr("fill", "#f0f0f0")
+    .attr("fill-opacity", 0)
     .on("click", goToNormalState);
 
   const graph = svg
     .append("g")
-    .attr("id", "radial")
+    .attr("id", "vis")
     .attr("transform", `translate(${[width / 2, height / 2]}) scale(0.8)`);
-  graph.append("g").attr("id", "all");
-  graph.append("g").attr("id", "tooltip");
 
-  const title = svg
-    .append("g")
-    .classed("maintitle", true)
-    .attr("transform", `translate(${[0, -config.titleHeight]})`);
+  const title = svg.append("g").attr("id", "maintitle");
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
     .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
+
+  svg.append("g").attr("id", "tooltip");
 
   goToNormalState();
 
@@ -106,90 +102,32 @@ function buildchart() {
  */
 
 function handleMouseOver(d, i) {
-  const svg = d3.select("g#tooltip");
-  const cursor = d3.mouse(this);
-
   // Ugly, will fix later
   const label = "longLabel" in d.data ? d.data.longLabel : d.data.label;
   const value =
     "eigenfactor" in d.data ? d.data.eigenfactor : d.data.parentEigenfactor;
 
-  d3.selectAll(".tooltip").remove();
-
-  const g = svg
-    .append("g")
-    .classed("tooltip", true)
-    .attr("id", "t-" + i);
-
-  const rect = g
-    .append("rect")
-    .classed("background", true)
-    .attr("x", 0)
-    .attr("y", 0)
-    .style("filter", "url(#drop-shadow)");
-
-  const text = g
-    .append("text")
-    .classed("text", true)
-    .attr("x", 0)
-    .attr("y", 0);
-
-  const tspan1 = text
-    .append("tspan")
-    .classed("title", true)
-    .attr("x", 4)
-    .attr("dy", "1em")
-    .text(label);
-
   if (clicked === -1 || clicked.data.id === d.data.id) {
-    text
-      .append("tspan")
-      .classed("detail", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text("Eigenfactor: " + cutAfter(value, 6));
+    tooltip(
+      "t-" + i,
+      width,
+      height,
+      label,
+      "Eigenfactor: " + cutAfter(value, 6)
+    );
   } else {
     const inout = getInOut(d, clicked);
-    text
-      .append("tspan")
-      .classed("detail", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text("IN:");
-    text
-      .append("tspan")
-      .classed("detail", true)
-      .attr("x", 4)
-      .attr("dx", "4.5em")
-      .text(cutAfter(inout.in, 6));
-    text
-      .append("tspan")
-      .classed("detail", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text("OUT:");
-    text
-      .append("tspan")
-      .classed("detail", true)
-      .attr("x", 4)
-      .attr("dx", "4.5em")
-      .text(cutAfter(inout.out, 6));
+    tooltip(
+      "t-" + i,
+      width,
+      height,
+      label,
+      "IN:",
+      "OUT:",
+      cutAfter(inout.in, 6),
+      cutAfter(inout.out, 6)
+    );
   }
-
-  const bbox = text.node().getBBox();
-  rect.attr("width", bbox.width + 8).attr("height", bbox.height);
-
-  /* Manage the bottom and right edges */
-  const x =
-    cursor[0] -
-    (cursor[0] + bbox.width + 8 + 2 > width / 2 ? bbox.width + 8 : 0);
-  const y =
-    cursor[1] +
-    (d.data.y + cursor[1] + bbox.height + 26 + 2 > height - config.titleHeight
-      ? -bbox.height - 6
-      : 26);
-
-  g.attr("transform", `translate(${x},${y})`);
 }
 
 function calcInDepth3(source, target) {
@@ -260,7 +198,7 @@ function goToNormalState() {
   clicked = -1;
   setTitle("");
 
-  const g = d3.select("g#all");
+  const g = d3.select("g#vis");
   g.select("g#innerArcs").remove();
   g.select("g#outerArcs").remove();
   g.select("g#labels").remove();
@@ -357,7 +295,7 @@ function selectInnerArc(arc) {
   const links = d3.select("g#links").remove();
   drawLinks(
     d3
-      .select("g#all")
+      .select("g#vis")
       .append("g")
       .attr("id", "links"),
     results.linksData.filter(
@@ -384,7 +322,7 @@ function selectInnerArc(arc) {
   d3.select("g#labels").remove();
   drawLabels(
     d3
-      .select("g#all")
+      .select("g#vis")
       .append("g")
       .attr("id", "labels"),
     results.leavesData
@@ -452,7 +390,7 @@ function selectOuterArc(arc) {
   const links = d3.select("g#links").remove();
   drawLinks(
     d3
-      .select("g#all")
+      .select("g#vis")
       .append("g")
       .attr("id", "links"),
     results.linksData.filter(
@@ -480,7 +418,7 @@ function selectOuterArc(arc) {
   // Labels
   d3.select("g#labels").remove();
   const g = d3
-    .select("g#all")
+    .select("g#vis")
     .append("g")
     .attr("id", "labels");
   drawLabels(
@@ -515,10 +453,10 @@ function selectOuterArc(arc) {
 }
 
 function setTitle(title) {
-  const text = d3.select("svg .maintitle text");
+  const text = d3.select("svg #maintitle text");
   text.text(title);
   const w = text.node().getBBox().width;
-  d3.select("svg .maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
+  d3.select("svg #maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
 }
 
 /*
