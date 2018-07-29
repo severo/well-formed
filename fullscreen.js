@@ -2,11 +2,12 @@ var fullscreenEnabled = !document.location.hash.match(/^#nofullscreen/);
 
 if (fullscreenEnabled) {
   setTimeout(function() {
-    d3.select("body")
-      .append("button")
-      .attr("id", "fullscreen")
-      .text("Fullscreen")
-      .on("click", goFullscreen);
+    const button = document.createElement("button");
+    document.body.appendChild(button);
+    button.setAttribute("id", "fullscreen");
+    button.setAttribute("style", "cursor:pointer;");
+    button.innerHTML = "Fullscreen";
+    button.addEventListener("click", goFullscreen);
   }, 200);
 }
 
@@ -90,23 +91,11 @@ source : http://johndyer.name/native-fullscreen-javascript-api-plus-jquery-plugi
 
     document.addEventListener(fullScreenApi.fullScreenEventName, function() {
       if (fullScreenApi.isFullScreen(document.body)) {
-        d3.select("button#fullscreen").html("&times;");
+        document.getElementById("fullscreen").innerHTML = "&times;";
       } else {
-        d3.select("button#fullscreen").html("Fullscreen");
+        document.getElementById("fullscreen").innerHTML = "Fullscreen";
       }
     });
-  }
-
-  // jQuery plugin
-  if (typeof jQuery != "undefined") {
-    jQuery.fn.requestFullScreen = function() {
-      return this.each(function() {
-        var el = jQuery(this);
-        if (fullScreenApi.supportsFullScreen) {
-          fullScreenApi.requestFullScreen(el);
-        }
-      });
-    };
   }
 
   // export api
