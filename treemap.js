@@ -232,6 +232,15 @@ function inout() {
       .selectAll(`g.journal`)
       .classed("gray", false)
       .classed("clicked", false);
+    d3.select("svg .leaves")
+      .selectAll(`g.journal rect.linked`)
+      .classed("linked", false)
+      .attr("fill", d =>
+        getColorByIndexAndWeight({
+          index: +d.parent.parent.id,
+          weight: d.data.weight
+        })
+      );
     return;
   }
 
@@ -269,6 +278,33 @@ function inout() {
     .selectAll(`g.journal`)
     .classed("gray", d => !highlighted[d.data.id] && d.data.id != clicked)
     .classed("clicked", d => d.data.id == clicked);
+
+  const localWeights = new Map([[main.data.id, 1]]);
+  links.in.forEach(l =>
+    localWeights.set(
+      l.target,
+      (localWeights.has(l.target) ? localWeights.get(l.target) : 0) +
+        l.normalizedWeight
+    )
+  );
+  links.out.forEach(l =>
+    localWeights.set(
+      l.source,
+      (localWeights.has(l.source) ? localWeights.get(l.source) : 0) +
+        l.normalizedWeight
+    )
+  );
+  d3.select("svg .leaves")
+    .selectAll(`g.journal`)
+    .filter(d => localWeights.has(d.data.id))
+    .select("rect")
+    .classed("linked", true)
+    .attr("fill", d => {
+      return getColorByIndexAndWeight({
+        index: +d.parent.parent.id,
+        weight: localWeights.get(d.data.id)
+      });
+    });
 
   // ROTATE
   d3.select("svg .inout")
