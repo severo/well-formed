@@ -40,113 +40,59 @@ function buildchart() {
         ${svgshadowfilter()}
       </defs>
         `
-    )
-    .append("g")
-    .attr("transform", `translate(0, ${config.titleHeight})`);
+    );
 
   svg
     .append("rect")
-    .attr("y", -config.titleHeight)
-    .attr("width", width)
-    .attr("height", height + config.titleHeight)
+    .attr("id", "main")
+    .attr("width", "100%")
+    .attr("height", "100%")
     .attr("fill", "#f0f0f0");
 
+  const vis = svg
+    .append("g")
+    .attr("id", "vis")
+    .attr("transform", `translate(0, ${config.titleHeight})`);
+
+  svg.append("g").attr("id", "maintitle");
+
+  svg.append("g").attr("id", "tooltip");
+
   function handleMouseOver(d, i) {
-    const cursor = d3.mouse(this);
-    d3.selectAll(".tooltip").remove();
-
-    const g = svg
-      .append("g")
-      .classed("tooltip", true)
-      .attr("id", "t-" + i);
-
-    const rect = g
-      .append("rect")
-      .classed("background", true)
-      .attr("x", 0)
-      .attr("y", 0)
-      .style("filter", "url(#drop-shadow)");
-
-    const text = g
-      .append("text")
-      .classed("text", true)
-      .attr("x", 0)
-      .attr("y", 0);
-
-    const tspan1 = text
-      .append("tspan")
-      .classed("title", true)
-      .attr("x", 4)
-      .attr("dy", "1em")
-      .text(d.data.longLabel);
-
     if (clicked === -1 || d.data.id === clicked)
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dy", "1em")
-        .text("Eigenfactor: " + cutAfter(d.value, 6));
+      tooltip(
+        "t-" + i,
+        width,
+        height,
+        d.data.longLabel,
+        "Eigenfactor: " + cutAfter(d.value, 6)
+      );
     else {
       const inArray = data.flowEdges.filter(
         e => e.source === d.data.id && e.target === clicked
       );
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dy", "1em")
-        .text("IN:");
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dx", "4.5em")
-        .text(
-          cutAfter(inArray.length === 1 ? inArray[0].normalizedWeight : 0, 6)
-        );
       const outArray = data.flowEdges.filter(
         e => e.source === clicked && e.target === d.data.id
       );
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dy", "1em")
-        .text("OUT:");
-      text
-        .append("tspan")
-        .classed("detail", true)
-        .attr("x", 4)
-        .attr("dx", "4.5em")
-        .text(
-          cutAfter(outArray.length === 1 ? outArray[0].normalizedWeight : 0, 6)
-        );
+      tooltip(
+        "t-" + i,
+        width,
+        height,
+        d.data.longLabel,
+        "IN:",
+        "OUT:",
+        cutAfter(inArray.length === 1 ? inArray[0].normalizedWeight : 0, 6),
+        cutAfter(outArray.length === 1 ? outArray[0].normalizedWeight : 0, 6)
+      );
     }
-
-    const bbox = text.node().getBBox();
-    rect.attr("width", bbox.width + 8).attr("height", bbox.height);
-
-    /* Manage the bottom and right edges */
-    const x =
-      d.x0 +
-      cursor[0] -
-      (d.x0 + cursor[0] + bbox.width + 8 + 2 > width ? bbox.width + 8 : 0);
-    const y =
-      d.y0 +
-      cursor[1] +
-      (d.y0 + cursor[1] + bbox.height + 26 + 2 > height - config.titleHeight
-        ? -bbox.height - 6
-        : 26);
-
-    g.attr("transform", `translate(${x},${y})`);
   }
 
   function handleMouseOut(d, i) {
     d3.select("#t-" + i).remove();
   }
 
-  const leaf = svg
+  const leaf = d3
+    .select("g#vis")
     .append("g")
     .classed("leaves", true)
     .selectAll("g")
@@ -204,7 +150,7 @@ function add_interaction(chart) {
   svg.on("click", click);
 
   const inout = d3
-    .select(chart)
+    .select("g#vis")
     .append("g")
     .classed("inout", true)
     .selectAll("g")
@@ -233,10 +179,7 @@ function add_interaction(chart) {
     .attr("transform", "rotate(0)")
     .attr("d", arrowShape(-1));
 
-  const title = svg
-    .append("g")
-    .classed("maintitle", true)
-    .attr("transform", `translate(${[0, -config.titleHeight]})`);
+  const title = svg.select("g#maintitle");
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
@@ -270,10 +213,10 @@ function arrowShape(sign) {
 }
 
 function setTitle(title) {
-  const text = d3.select("svg .maintitle text");
+  const text = d3.select("svg #maintitle text");
   text.text(title);
   const w = text.node().getBBox().width;
-  d3.select("svg .maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
+  d3.select("svg #maintitle rect").attr("width", !w ? 0 : w + 2 * 9);
 }
 
 function inout() {
