@@ -194,8 +194,7 @@ function setTitle(title) {
 function goToNormalState() {
   clicked = -1;
   setTitle("");
-  d3
-    .select("svg .journals")
+  d3.select("svg .journals")
     .selectAll(`g.journal.clicked`)
     .classed("clicked", false);
   unfadeFadedJournals();
@@ -219,8 +218,7 @@ function unfadeFadedJournals() {
 function selectNode(node) {
   setTitle(node.longLabel + " (" + node.year + ")");
 
-  d3
-    .select("svg .journals")
+  d3.select("svg .journals")
     .selectAll(`g.journal`)
     .classed("clicked", d => d.journalId === node.journalId);
 }

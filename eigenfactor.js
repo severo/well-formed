@@ -145,7 +145,7 @@ function flowEdges(links) {
   return l.map(e => {
     if ("weight" in e) {
       e.normalizedWeight =
-        Math.log(1 + e.weight / maxEdgeWeight * 10) / Math.log(11);
+        Math.log(1 + (e.weight / maxEdgeWeight) * 10) / Math.log(11);
     }
     return e;
   });
@@ -329,8 +329,7 @@ function tooltip(
 
   function appendTspan(t, c, x, dy, text) {
     if (text !== "")
-      t
-        .append("tspan")
+      t.append("tspan")
         .classed(c, true)
         .attr("x", x)
         .attr("dy", dy)
