@@ -1,4 +1,4 @@
-const config = { titleHeight: 35 },
+const config = { titleHeight: 45, titlePosition: [18, 28] },
   data = {},
   results = {};
 
@@ -33,8 +33,8 @@ svg text::selection {
 
     text { font-family: flama, sans-serif; font-weight: bold; }
 
-    #maintitle rect, .maintitle rect { fill: white; }
-    #maintitle text, .maintitle text { fill: #343434; font-size: 24px; font-family: flama, sans-serif; font-weight: normal; }
+    #maintitle rect, .maintitle rect { fill: none; }
+    #maintitle text, .maintitle text { fill: #555; font-size: 1em; font-family: flama, sans-serif; font-weight: bold;  }
 
     g.tooltip {}
     g.tooltip rect.background {fill: #000000; stroke: #333333; fill-opacity: 0.8}

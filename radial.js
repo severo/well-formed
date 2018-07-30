@@ -86,7 +86,8 @@ function buildchart() {
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
-    .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
+    .attr("letter-spacing", ".05em")
+    .attr("transform", `translate(${config.titlePosition})`);
 
   svg.append("g").attr("id", "tooltip");
 

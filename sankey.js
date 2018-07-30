@@ -1,6 +1,6 @@
 const svgcsssankey = `
 button#fullscreen {right: 30px;}
-svg.sankey {margin-left: 30px}
+svg.sankey {margin-left: 18px}
 svg.sankey g.journals g.journal.clicked rect.node,
 svg.sankey g.journals g.journal:hover rect.node {fill: #222222}
 svg.sankey g.journals g.journal:hover linearGradient.gradient stop,
@@ -15,7 +15,7 @@ const titleHeight = 20;
  * Build the chart
  */
 function buildchart() {
-  const sankeyWidth = width - 60;
+  const sankeyWidth = width - 36;
   results.nodes = createNodes(
     data.trees,
     data.years,
@@ -169,7 +169,11 @@ function add_interaction(chart) {
   title.append("rect").attr("height", config.titleHeight);
   title
     .append("text")
-    .attr("transform", `translate(${[9, config.titleHeight - 7]})`);
+    .attr("letter-spacing", ".05em")
+    .attr(
+      "transform",
+      `translate(${[config.titlePosition[0] - 18, config.titlePosition[1]]})`
+    );
 
   return chart;
 }

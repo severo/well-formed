@@ -85,7 +85,7 @@ h1 {
 .content p {
   float: left;
   max-width: 32em;
-  margin: 1em;
+  margin: 2em 1em 0;
 }
 
 .teaser p {
@@ -233,7 +233,7 @@ h1 {
   grid-template-rows: minmax(800px, 1fr) auto;
   width: auto;
   height: auto;
-  padding-top: 10px;
+  /* padding-top: 10px; */
 }
 
 @media (min-width: 1400px) and (min-height: 800px) {
@@ -276,13 +276,19 @@ h1 {
 
 button#fullscreen {
   position: absolute;
-  top: 4px;
-  right: 1em;
+  top: 5px;
+  right: 0;
   border: none;
   text-transform: uppercase;
-  background: #dddddd;
-  color: #333;
+  letter-spacing: 0.05em;
+  background: transparent;
+  color: #aaa;
   font-size: 12px;
   padding: 4px 5px;
   font-family: flama;
+}
+
+button#fullscreen:hover {
+  background: #fff;
+  color: #333;
 }
