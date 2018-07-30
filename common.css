@@ -85,7 +85,11 @@ h1 {
 .content p {
   float: left;
   max-width: 32em;
-  margin: 0 1em 1em 1em;
+  margin: 1em;
+}
+
+.teaser p {
+  margin-top: 0;
 }
 
 .content p strong {
@@ -266,6 +270,8 @@ h1 {
 
 .content.grid .vis {
   grid-area: vis;
+  min-height: 100vh;
+  min-height: calc(100vh-80px);
 }
 
 button#fullscreen {
